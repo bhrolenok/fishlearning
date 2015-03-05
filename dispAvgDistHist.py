@@ -1,4 +1,4 @@
-import numpy, scipy, matplotlib.pyplot as plt, sys, glob
+import numpy, scipy, matplotlib.pyplot as plt, sys, glob, time
 import sigma_opt
 import btfutil
 from scipy.spatial import cKDTree
@@ -39,7 +39,19 @@ def main(btfdata):
 	# so we should be able to get the distances excluding the point
 	# itself by ignoring the first column
 	# queries = numpy.array([knn.query(row,k=10)[0][1:] for row in data])
-	dists = numpy.array([knn.query(row,k=10)[0][1:].mean() for row in data])
+	def makeMeans(myKnn, myK, data, timeout):
+		lastTime = time.time()
+		lastRow = 0
+		numRows = data.shape[0]
+		for rowIdx in range(numRows):
+			curTime = time.time()
+			if curTime-lastTime > timeout:
+				print float(rowIdx)/float(numRows)*100,"%% ETA:", float(numRows-rowIdx)/(float(rowIdx-lastRow)/float(timeout)), "seconds"
+				lastTime = curTime
+				lastRow = rowIdx
+			yield myKnn.query(data[rowIdx,:],k=myK)[0][1:].mean()
+	# dists = numpy.array([knn.query(row,k=10)[0][1:].mean() for row in data])
+	dists = numpy.array([avg for avg in makeMeans(knn,10,data,30)])
 	print "Plotting"
 	plt.hist(dists,bins=50,histtype='stepfilled')
 	plt.show()
