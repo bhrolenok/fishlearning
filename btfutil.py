@@ -4,8 +4,10 @@ class BTF:
 	def __init__(self):
 		self.column_filenames = dict()
 		self.column_data = dict()
+		self.mask = None
 
 	def import_from_dir(self,dirname):
+		self.mask = None
 		new_columns = glob.glob(os.path.join(dirname,'*.btf'))
 		for column in new_columns:
 			cname = os.path.basename(column)[:-4]
@@ -29,16 +31,25 @@ class BTF:
 				return False
 		return True
 
+	def filter_by_col(self,col):
+		self.mask = [ele == 'True' for ele in self[col]]
+		pass
+
 	def __contains__(self,key):
 		return key in self.column_filenames
 
 	def __getitem__(self,key):
 		if not(self.__contains__(key)):
 			raise KeyError("No column named ["+str(key)+"]")
+		rv = None
 		if key in self.column_data:
-			return self.column_data[key]
+			rv = self.column_data[key]
 		else:
 			if self.load_column(key):
-				return self.column_data[key]
+				rv = self.column_data[key]
 			else:
 				raise KeyError("Could not load BTF column: ("+str(key)+","+str(self.column_filenames[key])+")")
+		if self.mask is None:
+			return rv
+		else:
+			return filter(lambda d: not(d is None), map(lambda data,mask: data if mask else None, rv, self.mask))
