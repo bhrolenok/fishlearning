@@ -1,4 +1,4 @@
-import numpy, btfutil, scipy.spatial, subprocess, time
+import numpy, btfutil, scipy.spatial, subprocess, time, sys
 
 class KNN():
 	def __init__(self,features,ys):
@@ -66,11 +66,11 @@ def dad(N,k,btf,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohve
 		models = models + (learn(dad_training_features,dad_training_ys),)
 	return models
 
-def debug():
+def main(training_dir):
 	training_btf = btfutil.BTF()
-	training_btf.import_from_dir('data/')
+	training_btf.import_from_dir(training_dir)
 	models = dad(10,10,training_btf,learnLR,predictLR)
 	print models
 
 if __name__ == '__main__':
-	debug()
+	main(sys.argv[1])
