@@ -66,11 +66,11 @@ def dad(N,k,btf,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohve
 		models = models + (learn(dad_training_features,dad_training_ys),)
 	return models
 
-def main(training_dir):
+def main(training_dir,num_models,max_seq_len):
 	training_btf = btfutil.BTF()
 	training_btf.import_from_dir(training_dir)
-	models = dad(10,10,training_btf,learnLR,predictLR)
+	models = dad(num_models,max_seq_len,training_btf,learnLR,predictLR)
 	print models
 
 if __name__ == '__main__':
-	main(sys.argv[1])
+	main(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
