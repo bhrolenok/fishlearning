@@ -46,10 +46,11 @@ def dad(N,k,btf,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohve
 	btf.filter_by_col('dbool')
 	training_features, training_ys = btf2data(btf,feature_names)
 	training_trajectory = split_btf_trajectory(btf,['xpos','ypos','timage'])
-	min_seq_length = min(map(lambda key: training_trajectory[key].shape[0]),training_trajectory) 
+	min_seq_length = min(map(lambda key: training_trajectory[key].shape[0],training_trajectory)) 
 	predict_steps = min_seq_length
 	if k > 0:
 		predict_steps = min(min_seq_length,k)
+	print "k=",predict_steps
 	training_traj_features = split_btf_trajectory(btf,feature_names)
 	models = (learn(training_features,training_ys),)
 	for n in range(N):
