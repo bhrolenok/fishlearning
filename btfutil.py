@@ -32,7 +32,7 @@ class BTF:
 		return True
 
 	def filter_by_col(self,col):
-		self.mask = [ele == 'True' for ele in self[col]]
+		self.mask = [ele.capitalize() == 'True' for ele in self[col]]
 		pass
 
 	def __contains__(self,key):
