@@ -1,4 +1,4 @@
-import glob, os.path, string
+import glob, os.path, string, numpy
 
 class BTF:
 	def __init__(self):
@@ -53,3 +53,19 @@ class BTF:
 			return rv
 		else:
 			return filter(lambda d: not(d is None), map(lambda data,mask: data if mask else None, rv, self.mask))
+
+def timeseries(btf,fun,pColNames,tCol='clocktime'):
+	oldT = None
+	firstNewT = 0
+	alldata = list()
+	alltimes = list()
+	for tIdx in range(len(btf[tCol])):
+		if (oldT is None):
+			oldT = btf[tCol][tIdx]
+		elif btf[tCol][tIdx] != oldT:
+			cdata = numpy.column_stack([map(float,btf[pName][firstNewT:tIdx]) for pName in pColNames])
+			alldata.append(fun(cdata))
+			alltimes.append(float(oldT))
+			firstNewT = tIdx
+			oldT = btf[tCol][tIdx]
+	return numpy.array(alltimes), numpy.array(alldata)
