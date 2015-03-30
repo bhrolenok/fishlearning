@@ -1,4 +1,4 @@
-import stats, dad, btfutil, numpy
+import stats, dad, btfutil, numpy, sys
 
 def diff(btf1,btf2):
 	btf1_traj = dad.split_btf_trajectory(btf1,['xpos','ypos','timage'],augment=False)
@@ -45,3 +45,15 @@ def write_gp_data(btf1,btf2,outfname,framerate=None):
 	for idx in range(len(m)):
 		outf.write(str(framerate*idx)+" "+str(m[idx])+" "+str(s[idx])+"\n")
 	outf.close()
+
+if __name__ == '__main__':
+	training_btf = btfutil.BTF()
+	training_btf.import_from_dir(sys.argv[1])
+	for idx in range(2,len(sys.argv)):
+		dirname = sys.argv[idx]
+		testing_btf = btfutil.BTF()
+		testing_btf.import_from_dir(dirname)
+		print dirname
+		outname = 'iter'+str(idx-1)+'.dat'
+		print "Iteration",idx-1,"printing to",outname
+		write_gp_data(training_btf,testing_btf,outname)
