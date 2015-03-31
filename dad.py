@@ -46,7 +46,7 @@ def split_btf_trajectory(btf,feature_names,augment):
 	unique_ids = set(npid)
 	return {eyed:features[npid==eyed] for eyed in unique_ids}
 
-def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=1):
+def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=None):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
