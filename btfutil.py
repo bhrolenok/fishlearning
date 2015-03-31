@@ -1,4 +1,22 @@
-import glob, os.path, string, numpy
+import glob, os.path, string, numpy, time
+
+VERBOSE_TIMEOUT=30 #Time in seconds between print outs
+
+def verbose_readlines(infile):
+	print "Loading",infile.name
+	theline = infile.readline()
+	lasttime = time.time()
+	lastidx = 0
+	curidx = 0
+	while theline != "":
+		yield theline
+		theline = infile.readline()
+		curtime = time.time()
+		if curtime - lasttime > VERBOSE_TIMEOUT:
+			print "Line", curidx, "lps",(curidx-lastidx)/float(VERBOSE_TIMEOUT)
+			lastidx = curidx
+			lasttime = curtime
+		curidx += 1
 
 class BTF:
 	def __init__(self):
@@ -12,10 +30,9 @@ class BTF:
 		for column in new_columns:
 			cname = os.path.basename(column)[:-4]
 			self.column_filenames[cname] = column
-
 	def load_column(self,cname):
 		if cname in self.column_filenames:
-			self.column_data[cname] = map(string.strip, open(self.column_filenames[cname]).readlines())
+			self.column_data[cname] = map(string.strip, verbose_readlines(open(self.column_filenames[cname])))
 			return True
 		return False
 
