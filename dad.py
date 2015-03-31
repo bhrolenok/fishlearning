@@ -46,7 +46,7 @@ def split_btf_trajectory(btf,feature_names,augment):
 	unique_ids = set(npid)
 	return {eyed:features[npid==eyed] for eyed in unique_ids}
 
-def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
+def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=1):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
@@ -82,6 +82,12 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 				dad_sample_ys = training_trajectory[eyed][row_idx+1]-traj[row_idx]
 				dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
 				dad_training_ys = numpy.row_stack([dad_training_ys, dad_sample_ys])
+		if not(weight_dad_samples is None):
+			if weight_dad_samples == 1:
+				weight_dad_samples = max(1,int(ys.shape[0]/dad_training_ys.shape[0]))
+			print "Reweighting samples:",weight_dad_samples
+			dad_training_features = numpy.row_stack([dad_training_features,]*weight_dad_samples)
+			dad_training_ys = numpy.row_stack([dad_training_ys,]*weight_dad_samples)
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 	return models
 
