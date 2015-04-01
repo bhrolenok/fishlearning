@@ -3,7 +3,6 @@ import glob, os.path, string, numpy, time
 VERBOSE_TIMEOUT=30 #Time in seconds between print outs
 
 def verbose_readlines(infile):
-	print "Loading",infile.name
 	theline = infile.readline()
 	lasttime = time.time()
 	lastidx = 0
@@ -13,7 +12,9 @@ def verbose_readlines(infile):
 		theline = infile.readline()
 		curtime = time.time()
 		if curtime - lasttime > VERBOSE_TIMEOUT:
-			print "Line", curidx, "lps",(curidx-lastidx)/float(VERBOSE_TIMEOUT)
+			if lastidx == 0:
+				print "[BTFUtil] Loading",infile.name
+			print "[BTFUtil] Line", curidx, "lps",(curidx-lastidx)/float(VERBOSE_TIMEOUT)
 			lastidx = curidx
 			lasttime = curtime
 		curidx += 1
