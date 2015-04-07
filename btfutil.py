@@ -103,40 +103,47 @@ def printif(s,q):
 		print s
 
 def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=False):
-	printif("depth %d"%depth,debug)
-	head_btf = BTF()
-	tail_btf = BTF()
-	head_btf.column_filenames = btf.column_filenames
-	tail_btf.column_filenames = btf.column_filenames
-	seq_start_t = float(btf['clocktime'][0])
-	block_start_idx = 0
-	id_set = None
-	max_len = len(btf['clocktime'])
-	if ((float(btf['clocktime'][max_len-1])-seq_start_t)<subseq_length_t) and (ignore_shorter):
-		printif("Final segment too short",debug)
-		return tuple()
-	while block_start_idx < max_len and (float(btf['clocktime'][block_start_idx])-seq_start_t)<subseq_length_t:
-		block_end_idx=block_start_idx
-		tmp_id_set = set()
-		while block_end_idx < max_len and float(btf['clocktime'][block_end_idx])==float(btf['clocktime'][block_start_idx]):
-			tmp_id_set.add(btf['id'][block_end_idx])
-			block_end_idx += 1
-		if id_set is None:
-			id_set = tmp_id_set
-		block_start_idx = block_end_idx
-		if id_set != tmp_id_set:
+	done = False
+	rv = tuple()
+	while not(done):
+		printif("depth %d"%depth,debug)
+		head_btf = BTF()
+		tail_btf = BTF()
+		head_btf.column_filenames = btf.column_filenames
+		tail_btf.column_filenames = btf.column_filenames
+		seq_start_t = float(btf['clocktime'][0])
+		block_start_idx = 0
+		id_set = None
+		max_len = len(btf['clocktime'])
+		if ((float(btf['clocktime'][max_len-1])-seq_start_t)<subseq_length_t) and (ignore_shorter):
+			printif("Final segment too short",debug)
+			done = True
 			break
-	last_seq_idx = min(max_len-1,block_start_idx)
-	printif("seq length %fs"%(float(btf['clocktime'][last_seq_idx])-seq_start_t),debug)
-	printif("last_seq_idx %d"%last_seq_idx,debug)
-	for key in btf.column_filenames:
-		if not(key in btf.column_data):
-			btf.load_column(key)
-		tail_btf.column_data[key] = btf[key][last_seq_idx:]
-		head_btf.column_data[key] = btf[key][:last_seq_idx]
-	if (float(btf['clocktime'][last_seq_idx])-seq_start_t)<subseq_length_t and ignore_shorter:
-		printif("ended early",debug)
-		rv = tuple()
-	else:
-		rv = (head_btf,)
-	return rv+split_subsequences(tail_btf,subseq_length_t,ignore_shorter,depth+1,debug)
+		while block_start_idx < max_len and (float(btf['clocktime'][block_start_idx])-seq_start_t)<subseq_length_t:
+			block_end_idx=block_start_idx
+			tmp_id_set = set()
+			while block_end_idx < max_len and float(btf['clocktime'][block_end_idx])==float(btf['clocktime'][block_start_idx]):
+				tmp_id_set.add(btf['id'][block_end_idx])
+				block_end_idx += 1
+			if id_set is None:
+				id_set = tmp_id_set
+			block_start_idx = block_end_idx
+			if id_set != tmp_id_set:
+				break
+		last_seq_idx = min(max_len-1,block_start_idx)
+		printif("seq length %fs"%(float(btf['clocktime'][last_seq_idx])-seq_start_t),debug)
+		printif("last_seq_idx %d"%last_seq_idx,debug)
+		for key in btf.column_filenames:
+			if not(key in btf.column_data):
+				btf.load_column(key)
+			tail_btf.column_data[key] = btf[key][last_seq_idx:]
+			head_btf.column_data[key] = btf[key][:last_seq_idx]
+		if (float(btf['clocktime'][last_seq_idx])-seq_start_t)<subseq_length_t and ignore_shorter:
+			printif("ended early",debug)
+			thing_to_add = tuple()
+		else:
+			thing_to_add = (head_btf,)
+		rv += thing_to_add
+		btf = tail_btf
+		depth=depth+1
+	return rv
