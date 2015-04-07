@@ -132,11 +132,8 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 	for key in btf.column_filenames:
 		if not(key in btf.column_data):
 			btf.load_column(key)
-		tail_btf.column_data[key] = btf.column_data[key][last_seq_idx:]
-		head_btf.column_data[key] = btf.column_data[key][:last_seq_idx]
-		if not(btf.mask is None):
-			tail_btf.mask = btf.mask[last_seq_idx:]
-			head_btf.mask = btf.mask[:last_seq_idx]
+		tail_btf.column_data[key] = btf[key][last_seq_idx:]
+		head_btf.column_data[key] = btf[key][:last_seq_idx]
 	if (float(btf['clocktime'][last_seq_idx])-seq_start_t)<subseq_length_t and ignore_shorter:
 		printif("ended early",debug)
 		rv = tuple()
