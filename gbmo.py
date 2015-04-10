@@ -1,4 +1,4 @@
-import numpy,scipy.optimize,btfutil,stats,time,os,tempfile,cPickle
+import numpy,scipy.optimize,btfutil,stats,time,os,tempfile,cPickle,sys
 
 def nullmin(fun,x0,args,**kwargs):
 	"""
@@ -46,15 +46,16 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50):
 		initial_guess = numpy.random.random((initial_guess,3))
 	#get generating behavior measures
 	behav_measures_dict = dict()
+	pose_cnames = ['xpos','ypos','timage']
 	for item in behavem_list:
 		print "Computing", item, "timeseries for [generating]"
-		gen_ts = btfutil.timeseries(sim_btf,item,pose_cnames)
+		gen_ts = btfutil.timeseries(gen_btf,item,pose_cnames)
 		print "Computing histogram"
 		gen_hist = numpy.histogram(gen_ts[1],bins=bins)
 		gen_hist_normed =gen_hist[0]/float(gen_hist[0].sum())
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
-	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=5,minimizer_kwargs={"method":"L-BFGS-B","args":(numSteps,behav_measures,initial_guess.shape,0.000001),"options":{"maxfun":30}})
+	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=5,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001),"options":{"maxfun":30}})
 	# so with an x with 9 spots, this should run for about 336 iterations.
 
 if __name__ == '__main__':
@@ -65,7 +66,7 @@ if __name__ == '__main__':
 	numsteps = int(sys.argv[2])
 	print "num features:",sys.argv[3]
 	num_features = int(sys.argv[3])
-	measures = [stats.maxDist,avgNNDist,varNNDist]
+	measures = [stats.maxDist,stats.avgNNDist,stats.varNNDist]
 	print "Optimizing"
 	result = optimize(gen_btf,numsteps,measures,9)
 	print "Saving result to", sys.argv[4]
