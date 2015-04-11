@@ -1,4 +1,4 @@
-import numpy,scipy.optimize,btfutil,stats,time,os,tempfile,cPickle,sys
+import numpy,scipy.optimize,btfutil,stats,time,os.path,tempfile,cPickle,sys,subprocess
 
 def nullmin(fun,x0,args,**kwargs):
 	"""
@@ -10,13 +10,13 @@ def nullmin(fun,x0,args,**kwargs):
 	"""
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
 
-def evaluate_sim(model,numSteps,behav_measures,lr_shape,eps):
+def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps):
 	tdir = tempfile.mkdtemp()
 	print "tmp dir:",tdir
-	outname = os.join(tdir,'lr_coeff.txt')
+	outname = os.path.join(tdir,'lr_coeff.txt')
 	prefix = "[BTFLogger] Starting new logs in"
 	outf = open(outname,"w")
-	x = x.reshape(lr_shape)
+	model = model.reshape(lr_shape)
 	for row in model:
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
@@ -24,10 +24,10 @@ def evaluate_sim(model,numSteps,behav_measures,lr_shape,eps):
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
-	trace_btfdir = output[tracebtfdir_start:trace_btfdir_end].strip()
+	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
 	sim_btf = btfutil.BTF()
 	sim_btf.import_from_dir(trace_btfdir)
-	sim_btf.filter_byb_col('dbool')
+	sim_btf.filter_by_col('dbool')
 	#Ok, now compute the histograms of the behavior measures
 	pose_cnames = ['xpos','ypos','timage']
 	rv = 0.0
@@ -55,7 +55,7 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50):
 		gen_hist_normed =gen_hist[0]/float(gen_hist[0].sum())
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
-	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=5,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001),"options":{"maxfun":30}})
+	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=5,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001),"options":{"maxfun":30}},disp=True)
 	# so with an x with 9 spots, this should run for about 336 iterations.
 
 if __name__ == '__main__':
