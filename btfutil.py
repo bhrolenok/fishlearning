@@ -87,7 +87,11 @@ def timeseries(btf,fun,pColNames,tCol='clocktime'):
 	firstNewT = 0
 	alldata = list()
 	alltimes = list()
-	for tIdx in range(len(btf[tCol])):
+	num_items = len(btf[tCol])
+	last_atime = time.time()
+	start_atime = last_atime
+	last_line = 0
+	for tIdx in range(num_items):
 		if (oldT is None):
 			oldT = btf[tCol][tIdx]
 		elif btf[tCol][tIdx] != oldT:
@@ -96,6 +100,13 @@ def timeseries(btf,fun,pColNames,tCol='clocktime'):
 			alltimes.append(float(oldT))
 			firstNewT = tIdx
 			oldT = btf[tCol][tIdx]
+		cur_atime = time.time()
+		if (cur_atime-last_atime)>VERBOSE_TIMEOUT:
+			if last_atime == start_atime:
+				print "[BTFUtil] timeseries"
+			print "[BTFUtil]","%f%%"%(100.0*float(tIdx)/float(num_items)),"@",float(tIdx-last_line)/float(cur_atime-last_atime),"lps"
+			last_atime=cur_atime
+			last_line = tIdx
 	return numpy.array(alltimes), numpy.array(alldata)
 
 def printif(s,q):
