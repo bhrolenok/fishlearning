@@ -1,4 +1,4 @@
-import numpy,scipy.optimize,btfutil,stats,time,os.path,tempfile,cPickle,sys,subprocess
+import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os.path,tempfile,cPickle,sys,subprocess
 
 def nullmin(fun,x0,args,**kwargs):
 	"""
@@ -27,7 +27,7 @@ def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps):
 	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
 	sim_btf = btfutil.BTF()
 	sim_btf.import_from_dir(trace_btfdir)
-	sim_btf.filter_by_col('dbool')
+	#sim_btf.filter_by_col('dbool')
 	#Ok, now compute the histograms of the behavior measures
 	pose_cnames = ['xpos','ypos','timage']
 	rv = 0.0
