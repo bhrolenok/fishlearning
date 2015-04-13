@@ -20,7 +20,7 @@ def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps):
 	for row in model:
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-nogui','-logging','-lr',outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-nogui','-logging',tdir,'-lr',outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
@@ -40,7 +40,7 @@ def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps):
 		rv += scipy.stats.entropy(sim_hist[0]+eps,behav_measures[key][0]+eps)
 	return rv
 
-def optimize(btf, numsteps, behavem_list,initial_guess,bins=50):
+def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5):
 	#initialize a random starting place if one isn't provided
 	if type(initial_guess) == int:
 		initial_guess = numpy.random.random((initial_guess,3))
@@ -55,11 +55,17 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50):
 		gen_hist_normed =gen_hist[0]/float(gen_hist[0].sum())
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
-	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=5,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001),"options":{"maxfun":30}},disp=True)
+	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001),"options":{"maxfun":maxfun}},disp=True)
 	# so with an x with 9 spots, this should run for about 336 iterations.
 
 if __name__ == '__main__':
 	gen_btf = btfutil.BTF()
+	maxfun=30
+	niter=5
+	if len(sys.argv)>5:
+		niter=float(sys.argv[5])
+		if len(sys.argv)>6:
+			maxfun = float(sys.argv[6])
 	print "gen behavior dir:",sys.argv[1]
 	gen_btf.import_from_dir(sys.argv[1])
 	print "num simulation steps:",sys.argv[2]
@@ -68,7 +74,7 @@ if __name__ == '__main__':
 	num_features = int(sys.argv[3])
 	measures = [stats.maxDist,stats.avgNNDist,stats.varNNDist]
 	print "Optimizing"
-	result = optimize(gen_btf,numsteps,measures,9)
+	result = optimize(gen_btf,numsteps,measures,9,niter=niter,maxfun=maxfun)
 	print "Saving result to", sys.argv[4]
 	cPickle.dump(result,open(sys.argv[4],"w"))
 	print "Done!"
