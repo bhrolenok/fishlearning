@@ -64,9 +64,9 @@ if __name__ == '__main__':
 	maxfun=30
 	niter=5
 	if len(sys.argv)>5:
-		niter=float(sys.argv[5])
+		niter=int(sys.argv[5])
 		if len(sys.argv)>6:
-			maxfun = float(sys.argv[6])
+			maxfun = int(sys.argv[6])
 	print "gen behavior dir:",sys.argv[1]
 	gen_btf.import_from_dir(sys.argv[1])
 	print "num simulation steps:",sys.argv[2]
