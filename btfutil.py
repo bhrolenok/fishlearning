@@ -31,6 +31,17 @@ class BTF:
 		for column in new_columns:
 			cname = os.path.basename(column)[:-4]
 			self.column_filenames[cname] = column
+
+	def save_to_dir(self,dirname,overwrite=False):
+		for key in self.column_data:
+			fname = os.path.join(dirname,key+".btf")
+			if os.path.exists(fname) and not(overwrite):
+				raise IOError("File exists: ["+fname+"]")
+			outf = open(fname,"w")
+			for line in self.column_data[key]:
+				outf.write(line+"\n")
+			outf.close()
+
 	def load_column(self,cname):
 		if cname in self.column_filenames:
 			self.column_data[cname] = tuple(map(string.strip, verbose_readlines(open(self.column_filenames[cname]))))
