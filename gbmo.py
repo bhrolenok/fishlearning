@@ -1,4 +1,4 @@
-import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os.path,tempfile,cPickle,sys,subprocess
+import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os,os.path,tempfile,cPickle,sys,subprocess
 
 def nullmin(fun,x0,args,**kwargs):
 	"""
@@ -10,9 +10,8 @@ def nullmin(fun,x0,args,**kwargs):
 	"""
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
 
-def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps):
-	tdir = tempfile.mkdtemp()
-	print "tmp dir:",tdir
+def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps,tdir):
+	# tdir = tempfile.mkdtemp()
 	outname = os.path.join(tdir,'lr_coeff.txt')
 	prefix = "[BTFLogger] Starting new logs in"
 	outf = open(outname,"w")
@@ -45,6 +44,8 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	if type(initial_guess) == int:
 		initial_guess = numpy.random.random((initial_guess,3))
 	#get generating behavior measures
+	tdir = tempfile.mkdtemp(prefix="logs_gbmo_",dir=os.getcwd())
+	print "logging dir:",tdir
 	behav_measures_dict = dict()
 	pose_cnames = ['xpos','ypos','timage']
 	for item in behavem_list:
@@ -55,7 +56,7 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 		gen_hist_normed =gen_hist[0]/float(gen_hist[0].sum())
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
-	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001),"options":{"maxfun":maxfun}},disp=True)
+	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
 	# so with an x with 9 spots, this should run for about 336 iterations.
 
 if __name__ == '__main__':
