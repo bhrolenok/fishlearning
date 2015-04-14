@@ -122,8 +122,8 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			cv_features,cv_ys = btf2data(cv_btf,feature_names,augment=True)
 		else:
 			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
-			cv_features = numpy.column_stack([cv_features,tmpF])
-			cv_ys = numpy.column_stack([cv_ys,tmpY])
+			cv_features = numpy.row_stack([cv_features,tmpF])
+			cv_ys = numpy.row_stack([cv_ys,tmpY])
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = None, None
 	for n in range(N):
