@@ -16,7 +16,7 @@ def predictLR(model,num_steps,initialPlacementBTF):
 	outf.close()
 	outf = open("initial_placement.txt","w")
 	rowIdx = 0
-	while rowIdx < len(initialPlacement['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
 		outf.write(initialPlacementBTF['id'][rowIdx])
 		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
 		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
