@@ -7,14 +7,24 @@ class KNN():
 	def query(self,features,k):
 		self.ys[self.kdt.query(features,k)[1]]
 
-def predictLR(model,num_steps,initialPlacementBTFDir):
+def predictLR(model,num_steps,initialPlacementBTF):
 	outname = 'lr_coeff.txt'
 	prefix = "[BTFLogger] Starting new logs in"
 	outf = open(outname,'w')
 	for row in model:
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	outf = open("initial_placement.txt","w")
+	rowIdx = 0
+	while rowIdx < len(initialPlacement['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+		outf.write(initialPlacementBTF['id'][rowIdx])
+		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
+		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
+		outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
+		rowIdx += 1
+	outf.close()
+	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed initial_placement.txt','-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
@@ -91,6 +101,51 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 	return models
 
+def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
+	training_features,training_ys = None,None
+	cutoff = int(len(training_btf_tuple)*0.8)
+	cv_tuple = training_btf_tuple[cutoff:]
+	training_btf_tuple = training_btf_tuple[:cutoff]
+	training_trajectories = list()
+	for btf in training_btf_tuple:
+		f,y = btf2data(btf,feature_names,augment=True)
+		if training_features is None:
+			training_features = f
+			training_ys = y
+		else:
+			training_features = numpy.row_stack([training_features,f])
+			training_ys = numpy.row_stack([training_ys,y])
+		training_trajectories.append(split_btf_trajectory(btf,['xpos','ypos','timage'],augment=False))
+	cv_features, cv_ys = None,None
+	for cv_btf in cv_tuple:
+		if cv_features is None:
+			cv_features,cv_ys = btf2data(cv_btf,feature_names,augment=True)
+		else:
+			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
+			cv_features = numpy.column_stack([cv_features,tmpF])
+			cv_ys = numpy.column_stack([cv_ys,tmpY])
+	 models = (learn(training_features,training_ys),)
+	 dad_training_features, dad_training_ys = None, None
+	 for n in range(N):
+	 	#for each subseq
+	 	for subseqBTF in training_btf_tuple:
+	 		sim_btf = predict(models[n],k,subseqBTF)
+	 		sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
+	 		sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'],augment=False)
+	 		sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=True)
+	 		if dad_training_features is None:
+	 			dad_training_features, dad_training_ys = training_features, training_ys
+	 		for eyed in sim_trajectory:
+	 			traj = sim_trajectory[eyed]
+	 			traj_feats = sim_traj_features[eyed]
+	 			for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
+	 				dad_sample_feats = traj_feats[row_idx]
+	 				dad_sample_ys = training_trajectory[eyed][row_idx+1]-traj[row_idx]
+	 				dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
+	 				dad_training_ys = numpy.row_stack([dad_training_ys,dad_sample_ys])
+	 	models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys))
+	 return models
+
 def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
@@ -103,6 +158,11 @@ def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforive
 	print "Iteration:",rv_idx
 	return model_list[rv_idx]
 
+def subseqmain(subseq_fname, num_models, max_seq_len):
+	print "loading btfs from",subseq_fname
+	btf_tuple = cPickle.load(open(subseq_fname))
+	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR)
+	cPickle.dump(models,open("dad-subseq-results.p","w"))
 
 def main(training_dir,num_models,max_seq_len):
 	models = dad(num_models,max_seq_len,training_dir,learnLR,predictLR)
@@ -111,7 +171,8 @@ def main(training_dir,num_models,max_seq_len):
 
 if __name__ == '__main__':
 	if len(sys.argv) == 4:
-		main(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
+		# main(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
+		subseqmain(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
 	elif len(sys.argv) == 3:
 		model_list = cPickle.load(open(sys.argv[2]))
 		best_model = find_best_model(sys.argv[1],model_list)
