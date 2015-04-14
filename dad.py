@@ -127,7 +127,6 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	 models = (learn(training_features,training_ys),)
 	 dad_training_features, dad_training_ys = None, None
 	 for n in range(N):
-	 	#for each subseq
 	 	for subseqBTF in training_btf_tuple:
 	 		sim_btf = predict(models[n],k,subseqBTF)
 	 		sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
