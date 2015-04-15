@@ -16,7 +16,7 @@ def predictLR(model,num_steps,initialPlacementBTF):
 	outf.close()
 	outf = open("initial_placement.txt","w")
 	rowIdx = 0
-	while rowIdx < len(initialPlacement['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
 		outf.write(initialPlacementBTF['id'][rowIdx])
 		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
 		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
@@ -122,8 +122,8 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			cv_features,cv_ys = btf2data(cv_btf,feature_names,augment=True)
 		else:
 			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
-			cv_features = numpy.column_stack([cv_features,tmpF])
-			cv_ys = numpy.column_stack([cv_ys,tmpY])
+			cv_features = numpy.row_stack([cv_features,tmpF])
+			cv_ys = numpy.row_stack([cv_ys,tmpY])
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = None, None
 	for n in range(N):
