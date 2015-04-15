@@ -1,4 +1,7 @@
 import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os,os.path,tempfile,cPickle,sys,subprocess
+# import matplotlib
+
+# matplotlib.pyplot.ion()
 
 def nullmin(fun,x0,args,**kwargs):
 	"""
@@ -9,6 +12,22 @@ def nullmin(fun,x0,args,**kwargs):
 	evaluations are very expensive and random search is the best you can do
 	"""
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
+
+def gen_gauss_eval(m1,s1, m2, s2, p1, numSamples):
+	def rv(x,disp=False):
+		foo = numpy.array([numpy.random.normal(m1,s1) if i < p1 else numpy.random.normal(m2,s2) for i in numpy.random.random(numSamples)])
+		bar = numpy.array([numpy.random.normal(x[0],numpy.abs(x[1])) if i < x[4] else numpy.random.normal(x[2],numpy.abs(x[3])) for i in numpy.random.random(numSamples)])
+		gen_hist = numpy.histogram(foo,bins=50)
+		gen_hist_normed = gen_hist[0]/float(gen_hist[0].sum())
+		sim_hist = numpy.histogram(bar,bins=gen_hist[1])
+		sim_hist_normed = sim_hist[0]/float(sim_hist[0].sum())
+		# matplotlib.pyplot.clf()
+		# if disp:
+		# 	matplotlib.pyplot.plot(gen_hist[1][:-1],gen_hist_normed)
+		# 	matplotlib.pyplot.plot(sim_hist[1][:-1],sim_hist_normed)
+		# 	matplotlib.pyplot.show()
+		return scipy.stats.entropy(sim_hist_normed+0.000001,gen_hist_normed+0.000001)
+	return rv
 
 def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps,tdir):
 	# tdir = tempfile.mkdtemp()
@@ -36,7 +55,7 @@ def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps,tdir):
 		print "Computing histogram"
 		sim_hist = numpy.histogram(sim_ts[1],bins=behav_measures[key][1])
 		sim_hist_normed=sim_hist[0]/float(sim_hist[0].sum())
-		rv += scipy.stats.entropy(sim_hist[0]+eps,behav_measures[key][0]+eps)
+		rv += scipy.stats.entropy(sim_hist_normed+eps,behav_measures[key][0]+eps)
 	return rv
 
 def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5):
