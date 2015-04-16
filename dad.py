@@ -27,7 +27,7 @@ def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
 		rowIdx += 1
 	outf.close()
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed', os.path.join(logdir,'initial_placement.txt'),'-nogui','-logging', logdir, '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed', os.path.join(logdir,'initial_placement.txt'),'-nogui','-logging', logdir, '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
@@ -132,7 +132,9 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = None, None
 	for n in range(N):
+		print "Iteration",n
 		for idx in range(len(training_btf_tuple)):
+			print "Subsequence",idx,"of",len(training_btf_tuple)
 			subseqBTF = training_btf_tuple[idx]
 			training_trajectory = training_trajectories[idx]
 			sim_btf = predict(models[n],k,subseqBTF,logdir=logdir)
@@ -150,7 +152,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 					dad_sample_ys = training_trajectory[eyed][row_idx+1]-traj[row_idx]
 					dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
 					dad_training_ys = numpy.row_stack([dad_training_ys,dad_sample_ys])
-		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys))
+		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 	return models
 
 def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):

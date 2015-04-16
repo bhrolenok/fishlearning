@@ -1,5 +1,5 @@
 import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os,os.path,tempfile,cPickle,sys,subprocess
-# import matplotlib
+import matplotlib
 
 # matplotlib.pyplot.ion()
 
@@ -21,11 +21,11 @@ def gen_gauss_eval(m1,s1, m2, s2, p1, numSamples):
 		gen_hist_normed = gen_hist[0]/float(gen_hist[0].sum())
 		sim_hist = numpy.histogram(bar,bins=gen_hist[1])
 		sim_hist_normed = sim_hist[0]/float(sim_hist[0].sum())
-		# matplotlib.pyplot.clf()
-		# if disp:
-		# 	matplotlib.pyplot.plot(gen_hist[1][:-1],gen_hist_normed)
-		# 	matplotlib.pyplot.plot(sim_hist[1][:-1],sim_hist_normed)
-		# 	matplotlib.pyplot.show()
+		matplotlib.pyplot.clf()
+		if disp:
+			matplotlib.pyplot.plot(gen_hist[1][:-1],gen_hist_normed)
+			matplotlib.pyplot.plot(sim_hist[1][:-1],sim_hist_normed)
+			matplotlib.pyplot.show()
 		return scipy.stats.entropy(sim_hist_normed+0.000001,gen_hist_normed+0.000001)
 	return rv
 
