@@ -1,4 +1,4 @@
-import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle
+import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile
 
 class KNN():
 	def __init__(self,features,ys):
@@ -7,14 +7,17 @@ class KNN():
 	def query(self,features,k):
 		self.ys[self.kdt.query(features,k)[1]]
 
-def predictLR(model,num_steps,initialPlacementBTF):
-	outname = 'lr_coeff.txt'
+def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
+	if logdir is None:
+		logdir = os.getcwd()
+	
+	outname = os.path.join(logdir,'lr_coeff.txt')
 	prefix = "[BTFLogger] Starting new logs in"
 	outf = open(outname,'w')
 	for row in model:
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
-	outf = open("initial_placement.txt","w")
+	outf = open(os.path.join(logdir,"initial_placement.txt"),"w")
 	rowIdx = 0
 	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
 		outf.write(initialPlacementBTF['id'][rowIdx])
@@ -24,7 +27,7 @@ def predictLR(model,num_steps,initialPlacementBTF):
 		rowIdx += 1
 	outf.close()
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed initial_placement.txt','-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed', os.path.join(logdir,'initial_placement.txt'),'-nogui','-logging', logdir, '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
@@ -107,6 +110,8 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	cv_tuple = training_btf_tuple[cutoff:]
 	training_btf_tuple = training_btf_tuple[:cutoff]
 	training_trajectories = list()
+	logdir = tempfile.mkdtemp(suffix='_dad',prefix='logging_',dir=os.getcwd())
+	print "Logging to",logdir
 	for btf in training_btf_tuple:
 		f,y = btf2data(btf,feature_names,augment=True)
 		if training_features is None:
@@ -127,13 +132,16 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = None, None
 	for n in range(N):
-		for subseqBTF in training_btf_tuple:
-			sim_btf = predict(models[n],k,subseqBTF)
+		for idx in range(len(training_btf_tuple)):
+			subseqBTF = training_btf_tuple[idx]
+			training_trajectory = training_trajectories[idx]
+			sim_btf = predict(models[n],k,subseqBTF,logdir=logdir)
 			sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
 			sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'],augment=False)
 			sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=True)
 			if dad_training_features is None:
 				dad_training_features, dad_training_ys = training_features, training_ys
+			#print sim_trajectory.keys(), training_trajectory.keys()
 			for eyed in sim_trajectory:
 				traj = sim_trajectory[eyed]
 				traj_feats = sim_traj_features[eyed]
