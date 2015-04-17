@@ -13,16 +13,16 @@ def nullmin(fun,x0,args,**kwargs):
 	"""
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
 
-def gen_gauss_eval(m1,s1, m2, s2, p1, numSamples):
-	foo = numpy.array([numpy.random.normal(m1,s1) if i < p1 else numpy.random.normal(m2,s2) for i in numpy.random.random(numSamples)])
+def gen_gauss_eval(m1,m2,p1, numSamples):
+	foo = numpy.array([numpy.random.normal(m1,1.0) if i < p1 else numpy.random.normal(m2,1.0) for i in numpy.random.random(numSamples)])
 	def rv(x,disp=False):
-		bar = numpy.array([numpy.random.normal(x[0],numpy.abs(x[1])) if i < x[4] else numpy.random.normal(x[2],numpy.abs(x[3])) for i in numpy.random.random(numSamples)])
+		bar = numpy.array([numpy.random.normal(x[0],1.0) if i < x[2] else numpy.random.normal(x[1],1.0) for i in numpy.random.random(numSamples)])
 		gen_hist = numpy.histogram(foo,bins=50)
 		gen_hist_normed = gen_hist[0]/float(gen_hist[0].sum())
 		sim_hist = numpy.histogram(bar,bins=gen_hist[1])
 		sim_hist_normed = sim_hist[0]/float(sim_hist[0].sum())
-		matplotlib.pyplot.clf()
 		if disp:
+			matplotlib.pyplot.clf()
 			matplotlib.pyplot.plot(gen_hist[1][:-1],gen_hist_normed)
 			matplotlib.pyplot.plot(sim_hist[1][:-1],sim_hist_normed)
 			matplotlib.pyplot.show()
