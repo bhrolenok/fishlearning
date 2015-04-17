@@ -14,8 +14,8 @@ def nullmin(fun,x0,args,**kwargs):
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
 
 def gen_gauss_eval(m1,s1, m2, s2, p1, numSamples):
+	foo = numpy.array([numpy.random.normal(m1,s1) if i < p1 else numpy.random.normal(m2,s2) for i in numpy.random.random(numSamples)])
 	def rv(x,disp=False):
-		foo = numpy.array([numpy.random.normal(m1,s1) if i < p1 else numpy.random.normal(m2,s2) for i in numpy.random.random(numSamples)])
 		bar = numpy.array([numpy.random.normal(x[0],numpy.abs(x[1])) if i < x[4] else numpy.random.normal(x[2],numpy.abs(x[3])) for i in numpy.random.random(numSamples)])
 		gen_hist = numpy.histogram(foo,bins=50)
 		gen_hist_normed = gen_hist[0]/float(gen_hist[0].sum())
@@ -38,7 +38,7 @@ def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps,tdir):
 	for row in model:
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-nogui','-logging',tdir,'-lr',outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-nogui','-logging',tdir,'-lr',outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
