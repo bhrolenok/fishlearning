@@ -13,6 +13,31 @@ def nullmin(fun,x0,args,**kwargs):
 	"""
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
 
+def gen_gauss_eval2(num_m, numSamples):
+	mix_probs = numpy.array([1.0/float(num_m),]*int(num_m)) #mix_probs = numpy.random.dirichlet([1.0/float(num_m),]*int(num_m))
+	means = numpy.random.random(num_m)*15.0
+	sigmas = numpy.random.random(num_m)*5.0
+	sample_choices = numpy.random.choice(range(num_m),size=numSamples,p=mix_probs)
+	gen_samples = [numpy.random.normal(means[thing],sigmas[thing]) for thing in sample_choices]
+	gen_hist = numpy.histogram(gen_samples,bins=50)
+	gen_hist_normed = gen_hist[0]/float(gen_hist[0].sum())
+	def rv(x,disp=False):
+		tmp_mix_rates = numpy.array([1.0/float(num_m),]*int(num_m)) #x[:num_m]
+		tmp_means = x[:num_m]
+		tmp_sigmas = x[num_m:2*num_m]
+		tmp_sc = numpy.random.choice(range(num_m),size=numSamples,p=tmp_mix_rates)
+		tmp_samples = [numpy.random.normal(tmp_means[thing],tmp_sigmas[thing]) for thing in tmp_sc]
+		sim_hist = numpy.histogram(tmp_samples,bins=gen_hist[1])
+		sim_hist_normed = sim_hist[0]/float(sim_hist[0].sum())
+		if disp:
+			matplotlib.pyplot.clf()
+			matplotlib.pyplot.plot(gen_hist[1][:-1],gen_hist_normed)
+			matplotlib.pyplot.plot(sim_hist[1][:-1],sim_hist_normed)
+			matplotlib.pyplot.show()
+		return scipy.stats.entropy(sim_hist_normed+0.000001,gen_hist_normed+0.000001)
+	return rv
+
+
 def gen_gauss_eval(m1,m2,p1, numSamples):
 	foo = numpy.array([numpy.random.normal(m1,1.0) if i < p1 else numpy.random.normal(m2,1.0) for i in numpy.random.random(numSamples)])
 	def rv(x,disp=False):
