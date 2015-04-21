@@ -3,6 +3,8 @@ import matplotlib
 
 # matplotlib.pyplot.ion()
 
+EPS=0.00000000001
+
 def nullmin(fun,x0,args,**kwargs):
 	"""
 	A null local minimization function.
@@ -16,10 +18,14 @@ def nullmin(fun,x0,args,**kwargs):
 # def mychoice(seq,p,size=1):
 # 	samples = numpy.random.multinomial(size,pvals=p)
 # 	return reduce(lambda s,x: s+x, [[seq[idx],]*samples[idx] for idx in range(len(seq))])
-def gen_gauss_eval2(num_m, numSamples):
+def gen_gauss_eval2(num_m, numSamples,given=None):
 	mix_probs = numpy.array([1.0/float(num_m),]*int(num_m)) #mix_probs = numpy.random.dirichlet([1.0/float(num_m),]*int(num_m))
-	means = numpy.random.random(num_m)*15.0
-	sigmas = numpy.random.random(num_m)*5.0
+	if given is None:
+		means = numpy.random.random(num_m)*15.0
+		sigmas = numpy.random.random(num_m)*5.0
+	else:
+		means=given[:int(num_m/2)]
+		sigmas=given[int(num_m/2):num_m]
 	sample_choices = numpy.random.choice(range(num_m),size=numSamples,p=mix_probs)
 	gen_samples = [numpy.random.normal(means[thing],sigmas[thing]) for thing in sample_choices]
 	gen_hist = numpy.histogram(gen_samples,bins=50)
@@ -29,7 +35,7 @@ def gen_gauss_eval2(num_m, numSamples):
 		tmp_means = x[:num_m]
 		tmp_sigmas = x[num_m:2*num_m]
 		tmp_sc = numpy.random.choice(range(num_m),size=numSamples,p=tmp_mix_rates)
-		tmp_samples = [numpy.random.normal(tmp_means[thing],tmp_sigmas[thing]) for thing in tmp_sc]
+		tmp_samples = [numpy.random.normal(tmp_means[thing],max(EPS,tmp_sigmas[thing])) for thing in tmp_sc]
 		sim_hist = numpy.histogram(tmp_samples,bins=gen_hist[1])
 		sim_hist_normed = sim_hist[0]/float(sim_hist[0].sum())
 		if disp:
