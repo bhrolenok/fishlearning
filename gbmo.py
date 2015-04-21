@@ -13,6 +13,9 @@ def nullmin(fun,x0,args,**kwargs):
 	"""
 	return scipy.optimize.OptimizeResult({'x':x0,'success':True,'fun':fun(x0)})
 
+# def mychoice(seq,p,size=1):
+# 	samples = numpy.random.multinomial(size,pvals=p)
+# 	return reduce(lambda s,x: s+x, [[seq[idx],]*samples[idx] for idx in range(len(seq))])
 def gen_gauss_eval2(num_m, numSamples):
 	mix_probs = numpy.array([1.0/float(num_m),]*int(num_m)) #mix_probs = numpy.random.dirichlet([1.0/float(num_m),]*int(num_m))
 	means = numpy.random.random(num_m)*15.0
@@ -35,7 +38,7 @@ def gen_gauss_eval2(num_m, numSamples):
 			matplotlib.pyplot.plot(sim_hist[1][:-1],sim_hist_normed)
 			matplotlib.pyplot.show()
 		return scipy.stats.entropy(sim_hist_normed+0.000001,gen_hist_normed+0.000001)
-	return rv
+	return rv,means,sigmas,mix_probs
 
 
 def gen_gauss_eval(m1,m2,p1, numSamples):
