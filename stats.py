@@ -6,7 +6,7 @@ def maxDist(data):
 	for eye in range(len(data)):
 		for jay in range(eye+1,len(data)):
 			# print data[eye,:],data[jay,:]
-			tmp = numpy.linalg.norm(data[eye,:]-data[jay,:])
+			tmp = numpy.linalg.norm(data[eye,[0,1]]-data[jay,[0,1]])
 			if mx is None or tmp > mx:
 				mx = tmp
 	return mx
@@ -19,7 +19,7 @@ def nnDists(data):
 			if jay == eye:
 				continue
 			else:
-				tmp = numpy.linalg.norm(data[eye,:]-data[jay,:])
+				tmp = numpy.linalg.norm(data[eye,[0,1]]-data[jay,[0,1]])
 				if mn is None or tmp < mn:
 					mn = tmp
 		dists.append(mn)
@@ -30,6 +30,33 @@ def avgNNDist(data):
 
 def varNNDist(data):
 	return nnDists(data).std()
+
+def avgYMagnitude(data):
+	yMag = 0.0
+	for eye in range(len(data)):
+		yMag += numpy.abs(data[eye,4])
+	return yMag/float(len(data))
+
+def polarizationOrder(data):
+	'''
+	From Tunstrom et al. 2013. The average direction of the fish. Basically alignment.
+	'''
+	Op = numpy.array([0.0,0.0])
+	for eye in range(len(data)):
+		Op += numpy.array([numpy.cos(data[eye,2]),numpy.sin(data[eye,2])])
+	return numpy.linalg.norm(Op)/float(len(data))
+
+def rotationOrder(data):
+	'''
+	From Tunstrom et al. 2013. The degree of rotation about the CoM of fish.
+	'''
+	Or = numpy.array([0.0,0.0])
+	CoM = data[:,[0,1]].mean()
+	for eye in range(len(data)):
+		r = data[eye,:-1]-CoM
+		u = numpy.array([numpy.cos(data[eye,2]),numpy.sin(data[eye,2])])
+		Or += numpy.cross(u,r)
+	return numpy.linalg.norm(Or)/float(len(data))
 
 def write_gnuplot(outfname,x,y):
 	outf = open(outfname,"w")

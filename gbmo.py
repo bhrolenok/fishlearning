@@ -1,4 +1,4 @@
-import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os,os.path,tempfile,cPickle,sys,subprocess
+import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os,os.path,tempfile,cPickle,sys,subprocess,cma
 import matplotlib
 
 # matplotlib.pyplot.ion()
@@ -24,8 +24,8 @@ def gen_gauss_eval2(num_m, numSamples,given=None):
 		means = numpy.random.random(num_m)*15.0
 		sigmas = numpy.random.random(num_m)*5.0
 	else:
-		means=given[:int(num_m/2)]
-		sigmas=given[int(num_m/2):num_m]
+		means=given[:int(num_m)]
+		sigmas=given[int(num_m):int(num_m*2)]
 	sample_choices = numpy.random.choice(range(num_m),size=numSamples,p=mix_probs)
 	gen_samples = [numpy.random.normal(means[thing],sigmas[thing]) for thing in sample_choices]
 	gen_hist = numpy.histogram(gen_samples,bins=50)
@@ -109,7 +109,9 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 		gen_hist_normed =gen_hist[0]/float(gen_hist[0].sum())
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
-	return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
+	# return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
+	# return scipy.optimize.anneal(evaluate_sim,initial_guess,lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
+	return cma.fmin(evaluate_sim,initial_guess,1.0,options={"bounds":(-25.0,1.0),"maxfevals":(niter*maxfun)})
 	# so with an x with 9 spots, this should run for about 336 iterations.
 
 if __name__ == '__main__':
@@ -126,7 +128,7 @@ if __name__ == '__main__':
 	numsteps = int(sys.argv[2])
 	print "num features:",sys.argv[3]
 	num_features = int(sys.argv[3])
-	measures = [stats.maxDist,stats.avgNNDist,stats.varNNDist]
+	measures = [stats.maxDist,stats.avgNNDist,stats.varNNDist,stats.polarizationOrder,stats.rotationOrder]
 	print "Optimizing"
 	result = optimize(gen_btf,numsteps,measures,9,niter=niter,maxfun=maxfun)
 	print "Saving result to", sys.argv[4]
