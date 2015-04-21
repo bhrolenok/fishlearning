@@ -110,8 +110,8 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
 	# return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
-	# return scipy.optimize.anneal(evaluate_sim,initial_guess,lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
-	return cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})
+	# return scipy.optimize.anneal(evaluate_sim,initial_guess,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
+	return cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})
 	# so with an x with 9 spots, this should run for about 336 iterations.
 
 if __name__ == '__main__':
