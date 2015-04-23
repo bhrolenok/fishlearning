@@ -109,10 +109,10 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 		gen_hist_normed =gen_hist[0]/float(gen_hist[0].sum())
 		behav_measures_dict[item] = (gen_hist_normed,gen_hist[1])
 	# start optimizing
-	# return scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
-	# return scipy.optimize.anneal(evaluate_sim,initial_guess,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
-	return cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})
-	# so with an x with 9 spots, this should run for about 336 iterations.
+	# res = ("basinhopping",)+scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
+	# res = ("anneal",)+scipy.optimize.anneal(evaluate_sim,initial_guess,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
+	res = ("cma",)+cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})[:-3]
+	return res
 
 if __name__ == '__main__':
 	gen_btf = btfutil.BTF()
