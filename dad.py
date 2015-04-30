@@ -134,7 +134,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	for n in range(N):
 		print "Iteration",n
 		for idx in range(len(training_btf_tuple)):
-			print "Subsequence",idx,"of",len(training_btf_tuple)
+			print "Subsequence",idx,"of",len(training_btf_tuple),"\r",
 			subseqBTF = training_btf_tuple[idx]
 			training_trajectory = training_trajectories[idx]
 			sim_btf = predict(models[n],k,subseqBTF,logdir=logdir)
@@ -153,6 +153,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 					dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
 					dad_training_ys = numpy.row_stack([dad_training_ys,dad_sample_ys])
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
+		print
 	return models
 
 def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
