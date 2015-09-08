@@ -135,23 +135,28 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		print "Iteration",n
 		for idx in range(len(training_btf_tuple)):
 			print "Subsequence",idx,"of",len(training_btf_tuple),"\r",
-			subseqBTF = training_btf_tuple[idx]
-			training_trajectory = training_trajectories[idx]
-			sim_btf = predict(models[n],k,subseqBTF,logdir=logdir)
-			sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
-			sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'],augment=False)
-			sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=True)
+			# subseqBTF = training_btf_tuple[idx]
+			# training_trajectory = training_trajectories[idx]
+			# sim_btf = predict(models[n],k,subseqBTF,logdir=logdir)
+			# sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
+			# sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'],augment=False)
+			# sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=True)
+			# if dad_training_features is None:
+			# 	dad_training_features, dad_training_ys = training_features, training_ys
+			# #print sim_trajectory.keys(), training_trajectory.keys()
+			# for eyed in sim_trajectory:
+			# 	traj = sim_trajectory[eyed]
+			# 	traj_feats = sim_traj_features[eyed]
+			# 	for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
+			# 		dad_sample_feats = traj_feats[row_idx]
+			# 		dad_sample_ys = training_trajectory[eyed][row_idx+1]-traj[row_idx]
+			# 		dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
+			# 		dad_training_ys = numpy.row_stack([dad_training_ys,dad_sample_ys])
+			tmp_feats,tmp_ys = do_subseq_inner_loop(training_btf_tuple[idx],training_trajectories[idx],predict,models[n],k,logdir,feature_names)
 			if dad_training_features is None:
 				dad_training_features, dad_training_ys = training_features, training_ys
-			#print sim_trajectory.keys(), training_trajectory.keys()
-			for eyed in sim_trajectory:
-				traj = sim_trajectory[eyed]
-				traj_feats = sim_traj_features[eyed]
-				for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
-					dad_sample_feats = traj_feats[row_idx]
-					dad_sample_ys = training_trajectory[eyed][row_idx+1]-traj[row_idx]
-					dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
-					dad_training_ys = numpy.row_stack([dad_training_ys,dad_sample_ys])
+			dad_training_features = numpy.row_stack([dad_training_features,tmp_feats])
+			dad_training_ys = numpy.row_stack([dad_training_ys,tmp_ys])
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 		print
 	return models
