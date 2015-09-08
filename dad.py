@@ -156,6 +156,26 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		print
 	return models
 
+def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
+	sim_btf = predict(model,k,subseqBTF,logdir)
+	sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
+	sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
+	sim_traj_features = split_btf_trajectory(sim_btf, feature_names, augment=True)
+	feats_rv = list()
+	ys_rv = list()
+	for eyed in sim_trajectory:
+		traj = sim_trajectory[eyed]
+		traj_feats = sim_traj_features[eyed]
+		num_dad_samples = min(training_trajectory[eyed].shape[0],traj.shape[0])-2
+		traj_feats_rv = numpy.zeros((num_dad_samples,traj_feats.shape[1]))
+		traj_ys_rv = numpy.zeros((num_dad_samples,traj.shape[1]))
+		for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
+			traj_feats_rv[row_idx-1] = traj_feats[row_idx]
+			traj_ys_rv[row_idx-1] = training_trajectory[eyed][row_idx+1]-traj[row_idx]
+		feats_rv.append(traj_feats_rv)
+		ys_rv.append(traj_ys_rv)
+	return numpy.row_stack(feats_rv), numpy.row_stack(ys_rv)
+
 def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
