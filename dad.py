@@ -158,21 +158,8 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		# 		dad_training_features, dad_training_ys = training_features, training_ys
 		# 	dad_training_features = numpy.row_stack([dad_training_features,tmp_feats])
 		# 	dad_training_ys = numpy.row_stack([dad_training_ys,tmp_ys])
-		nt = len(training_btf_tuple)
-		# logdir = tempfile.mkdtemp(suffix='_dad',prefix='logging_',dir=os.getcwd())
-		def tmp_do(idx):
-			return do_subseq_inner_loop(training_btf_tuple[idx], training_trajectories[idx], predict, models[n], k, tempfile.mkdtemp(suffix='_seq_%d'%idx, prefix='it_%d'%n,dir=logdir), feature_names)
-		# results = pool.map(lambda idx: 
-		# 	do_subseq_inner_loop(
-		# 		training_btf_tuple[idx],
-		# 		training_trajectories[idx],
-		# 		predict,models[n],
-		# 		k,
-		# 		tempfile.mkdtemp(suffix='_seq_%d'%idx, prefix='it_%d'%n,dir=logdir),
-		# 		feature_names), 
-		# 	range(nt))
-		results = pool.map(tmp_do,range(nt))
 		# results = map(lambda tpl, trajs: do_subseq_inner_loop(tpl,trajs,predict,models[n],k,logdir,feature_names),training_btf_tuple, training_trajectories)
+		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,model,k,logdir,feature_names,n))
 		new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		# new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		dad_training_features = numpy.row_stack([dad_training_features,new_feats])
@@ -180,6 +167,15 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 		print
 	return models
+
+def args_generator(training_btf_tuple, training_trajectories,predict,model,k,logdir,feature_names,iteration):
+	for idx in range(len(training_btf_tuple)):
+		# logdir = tempfile.mkdtemp(suffix='_dad',prefix='logging_',dir=os.getcwd())
+		new_logdir = tempfile.mkdtemp(suffix='_seq_%d'%d,prefix='it_%d_'%iteration,dir=logdir)
+		yield (training_btf_tuple[idx],training_trajectories[idx],predict,model,k,new_logdir,feature_names)
+
+def multiproc_hack(args):
+	return do_subseq_inner_loop(args[0],args[1],args[2],args[3],args[4],args[5],args[6])
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
 	sim_btf = predict(model,k,subseqBTF,logdir)
