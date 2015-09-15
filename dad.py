@@ -166,7 +166,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 				training_trajectories[idx],
 				predict,models[n],
 				k,
-				tempfile.mkdtemp(suffix='_seq_%d'%idx, prefix='it_%d'%n,dir=logdir)
+				tempfile.mkdtemp(suffix='_seq_%d'%idx, prefix='it_%d'%n,dir=logdir),
 				feature_names), 
 			range(nt))
 		# results = map(lambda tpl, trajs: do_subseq_inner_loop(tpl,trajs,predict,models[n],k,logdir,feature_names),training_btf_tuple, training_trajectories)
