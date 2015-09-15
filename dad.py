@@ -197,6 +197,7 @@ def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,fe
 			traj_ys_rv[row_idx] = training_trajectory[eyed][row_idx+1]-traj[row_idx]
 		feats_rv.append(traj_feats_rv)
 		ys_rv.append(traj_ys_rv)
+	print '.',
 	return numpy.row_stack(feats_rv), numpy.row_stack(ys_rv)
 
 def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
