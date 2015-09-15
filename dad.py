@@ -159,11 +159,14 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		# 	dad_training_features = numpy.row_stack([dad_training_features,tmp_feats])
 		# 	dad_training_ys = numpy.row_stack([dad_training_ys,tmp_ys])
 		nt = len(training_btf_tuple)
-		results = pool.map(lambda tuple, trajs: do_subseq_inner_loop(tuple,trajs,predict,models[n],k,logdir,feature_names),training_btf_tuple,training_trajectories)
+		results = pool.map(lambda idx: 
+			do_subseq_inner_loop(training_btf_tuple[idx],training_trajectories[idx],predict,models[n],k,logdir,feature_names), 
+			range(nt))
+		# results = map(lambda tpl, trajs: do_subseq_inner_loop(tpl,trajs,predict,models[n],k,logdir,feature_names),training_btf_tuple, training_trajectories)
 		new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
+		# new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		dad_training_features = numpy.row_stack([dad_training_features,new_feats])
 		dad_training_ys = numpy.row_stack([dad_training_ys,new_ys])
-
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 		print
 	return models
