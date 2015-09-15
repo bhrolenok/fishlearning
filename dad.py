@@ -171,7 +171,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		# 		tempfile.mkdtemp(suffix='_seq_%d'%idx, prefix='it_%d'%n,dir=logdir),
 		# 		feature_names), 
 		# 	range(nt))
-		results = map(tmp_do,range(nt))
+		results = pool.map(tmp_do,range(nt))
 		# results = map(lambda tpl, trajs: do_subseq_inner_loop(tpl,trajs,predict,models[n],k,logdir,feature_names),training_btf_tuple, training_trajectories)
 		new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		# new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
