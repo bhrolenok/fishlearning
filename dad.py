@@ -171,7 +171,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 def args_generator(training_btf_tuple, training_trajectories,predict,model,k,logdir,feature_names,iteration):
 	for idx in range(len(training_btf_tuple)):
 		# logdir = tempfile.mkdtemp(suffix='_dad',prefix='logging_',dir=os.getcwd())
-		new_logdir = tempfile.mkdtemp(suffix='_seq_%d'%d,prefix='it_%d_'%iteration,dir=logdir)
+		new_logdir = tempfile.mkdtemp(suffix='_seq_%d'%idx,prefix='it_%d_'%iteration,dir=logdir)
 		yield (training_btf_tuple[idx],training_trajectories[idx],predict,model,k,new_logdir,feature_names)
 
 def multiproc_hack(args):
