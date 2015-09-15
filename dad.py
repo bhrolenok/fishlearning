@@ -171,12 +171,13 @@ def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,fe
 	for eyed in sim_trajectory:
 		traj = sim_trajectory[eyed]
 		traj_feats = sim_traj_features[eyed]
-		num_dad_samples = min(training_trajectory[eyed].shape[0],traj.shape[0])-2
+		num_dad_samples = min(training_trajectory[eyed].shape[0],traj.shape[0])-1
 		traj_feats_rv = numpy.zeros((num_dad_samples,traj_feats.shape[1]))
 		traj_ys_rv = numpy.zeros((num_dad_samples,traj.shape[1]))
-		for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
-			traj_feats_rv[row_idx-1] = traj_feats[row_idx]
-			traj_ys_rv[row_idx-1] = training_trajectory[eyed][row_idx+1]-traj[row_idx]
+		# for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
+		for row_idx in range(num_dad_samples):
+			traj_feats_rv[row_idx] = traj_feats[row_idx]
+			traj_ys_rv[row_idx] = training_trajectory[eyed][row_idx+1]-traj[row_idx]
 		feats_rv.append(traj_feats_rv)
 		ys_rv.append(traj_ys_rv)
 	return numpy.row_stack(feats_rv), numpy.row_stack(ys_rv)
