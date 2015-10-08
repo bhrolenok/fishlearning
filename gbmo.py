@@ -119,7 +119,7 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	tmp_opts['args'] = (numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir)
 	tmp_opts["bounds"] = [-25.0,1.0]
 	tmp_opts["maxfevals"] = (niter*maxfun)
-	es = cma.CMAEvolutionStrategy(initial_guess.reshape(x0=(-1,)), sigma0=1.0, opts=tmp_opts)
+	es = cma.CMAEvolutionStrategy(x0=initial_guess.reshape((-1,)), sigma0=1.0, inopts=tmp_opts)
 	# SINGLE PROCESS
 	# cma_res = cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})
 	
