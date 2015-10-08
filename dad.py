@@ -104,7 +104,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 	return models
 
-def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
+def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False):
 	training_features,training_ys = None,None
 	cutoff = int(len(training_btf_tuple)*0.8)
 	cv_tuple = training_btf_tuple[cutoff:]
@@ -165,7 +165,10 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		dad_training_features = numpy.row_stack([dad_training_features,new_feats])
 		dad_training_ys = numpy.row_stack([dad_training_ys,new_ys])
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
-		print
+	if savetofile:
+		picklename = os.path.join(logdir,'dad-subseq-results.p')
+		print "Saving models to [%s]"%(picklename,)
+		cPickle.dump(models,open(picklename,'w'))
 	return models
 
 def args_generator(training_btf_tuple, training_trajectories,predict,model,k,logdir,feature_names,iteration):
@@ -196,7 +199,6 @@ def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,fe
 			traj_ys_rv[row_idx] = training_trajectory[eyed][row_idx+1]-traj[row_idx]
 		feats_rv.append(traj_feats_rv)
 		ys_rv.append(traj_ys_rv)
-	print '.',
 	return numpy.row_stack(feats_rv), numpy.row_stack(ys_rv)
 
 def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
@@ -214,8 +216,8 @@ def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforive
 def subseqmain(subseq_fname, num_models, max_seq_len):
 	print "loading btfs from",subseq_fname
 	btf_tuple = cPickle.load(open(subseq_fname))
-	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR)
-	cPickle.dump(models,open("dad-subseq-results.p","w"))
+	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR,savetofile=True)
+	#cPickle.dump(models,open("dad-subseq-results.p","w"))
 
 def main(training_dir,num_models,max_seq_len):
 	models = dad(num_models,max_seq_len,training_dir,learnLR,predictLR)
