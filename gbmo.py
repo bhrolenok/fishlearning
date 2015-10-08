@@ -116,7 +116,13 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	# res = ("basinhopping",)+scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
 	# res = ("anneal",)+scipy.optimize.anneal(evaluate_sim,initial_guess,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
 	tmp_opts = dict()
-	tmp_opts['args'] = (numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir)
+	# tmp_opts['args'] = (numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir)
+	global global_args
+	global_args['numsteps'] = numsteps
+	global_args['behav_measures_dict'] = behav_measures_dict
+	global_args['lr_shape'] = initial_guess.shape
+	global_args['eps'] = 0.000001
+	global_args['tdir'] = tdir
 	tmp_opts["bounds"] = [-25.0,1.0]
 	tmp_opts["maxfevals"] = (niter*maxfun)
 	es = cma.CMAEvolutionStrategy(x0=initial_guess.reshape((-1,)), sigma0=1.0, inopts=tmp_opts)
@@ -139,6 +145,11 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	cma_res[-1].load()
 	res = ("cma",)+cma_res[:-3]+(cma_res[-1].f[:,[1,4,5]],)
 	return res
+
+global_args = {}
+
+def eval_wrapper(model):
+	return evaluate_sim(model,global_args['numsteps'],global_args['behav_measures_dict'],global_args['lr_shape'],global_args['eps'],global_args['tdir'])
 
 if __name__ == '__main__':
 	gen_btf = btfutil.BTF()
