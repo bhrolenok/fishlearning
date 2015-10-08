@@ -136,7 +136,7 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	while not(es.stop()):
 		candidates = es.ask()
 		print "Num candidates:",len(candidates)
-		evls = pool.map(evaluate_sim,candidates)
+		evls = pool.map(eval_wrapper,candidates)
 		es.tell(candidates,evls)
 		es.disp()
 		GEN_CTR=GEN_CTR+1
