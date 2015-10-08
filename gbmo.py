@@ -1,9 +1,12 @@
 import numpy,scipy.optimize,scipy.stats,btfutil,stats,time,os,os.path,tempfile,cPickle,sys,subprocess,cma
 import matplotlib
+import multiprocessing
 
 # matplotlib.pyplot.ion()
 
 EPS=0.00000000001
+
+GEN_CTR=0
 
 def nullmin(fun,x0,args,**kwargs):
 	"""
@@ -65,14 +68,15 @@ def gen_gauss_eval(m1,m2,p1, numSamples):
 
 def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps,tdir):
 	# tdir = tempfile.mkdtemp()
-	outname = os.path.join(tdir,'lr_coeff.txt')
+	new_logdir = tempfile.mkdtemp(prefix='generation_%d_candidate_'%GEN_CTR,dir=tdir)
+	outname = os.path.join(new_logdir,'lr_coeff.txt')
 	prefix = "[BTFLogger] Starting new logs in"
 	outf = open(outname,"w")
 	model = model.reshape(lr_shape)
 	for row in model:
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-nogui','-logging',tdir,'-lr',outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-nogui','-logging',new_logdir,'-lr',outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
@@ -111,7 +115,27 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	# start optimizing
 	# res = ("basinhopping",)+scipy.optimize.basinhopping(evaluate_sim,initial_guess,niter=niter,minimizer_kwargs={"method":"L-BFGS-B","args":(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),"options":{"maxfun":maxfun}},disp=True)
 	# res = ("anneal",)+scipy.optimize.anneal(evaluate_sim,initial_guess,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),lower=-25.0,upper=1.0,maxeval=(maxfun*niter),full_output=True)
-	cma_res = cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})
+	tmp_opts = dict()
+	tmp_opts['args'] = (numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir)
+	tmp_opts["bounds"] = [-25.0,1.0]
+	tmp_opts["maxfevals"] = (niter*maxfun)
+	es = cma.CMAEvolutionStrategy(initial_guess.reshape(x0=(-1,)), sigma0=1.0, opts=tmp_opts)
+	# SINGLE PROCESS
+	# cma_res = cma.fmin(evaluate_sim,initial_guess.reshape((-1,)),1.0,args=(numsteps,behav_measures_dict,initial_guess.shape,0.000001,tdir),options={"bounds":[-25.0,1.0],"maxfevals":(niter*maxfun)})
+	
+	# MULTIPROCESSING
+	pool = multiprocessing.Pool(multiprocessing.cpu_count())
+	global GEN_CTR
+	GEN_CTR=0
+	while not(es.stop()):
+		candidates = es.ask()
+		print "Num candidates:",len(candidates)
+		evls = pool.map(evaluate_sim,candidates)
+		es.tell(candidates,evls)
+		es.disp()
+		GEN_CTR=GEN_CTR+1
+	cma_res = es.result()
+
 	cma_res[-1].load()
 	res = ("cma",)+cma_res[:-3]+(cma_res[-1].f[:,[1,4,5]],)
 	return res
