@@ -88,9 +88,9 @@ def evaluate_sim(model,num_steps,behav_measures,lr_shape,eps,tdir):
 	pose_cnames = ['xpos','ypos','timage']
 	rv = 0.0
 	for key in behav_measures:
-		print "Computing",key,"timeseries for [simulated]"
+		# print "Computing",key,"timeseries for [simulated]"
 		sim_ts = btfutil.timeseries(sim_btf,key,pose_cnames)
-		print "Computing histogram"
+		# print "Computing histogram"
 		sim_hist = numpy.histogram(sim_ts[1],bins=behav_measures[key][1])
 		sim_hist_normed=sim_hist[0]/float(sim_hist[0].sum())
 		rv += scipy.stats.entropy(sim_hist_normed+eps,behav_measures[key][0]+eps)
@@ -134,16 +134,21 @@ def optimize(btf, numsteps, behavem_list,initial_guess,bins=50,maxfun=30,niter=5
 	global GEN_CTR
 	GEN_CTR=0
 	while not(es.stop()):
+		print "Generation", GEN_CTR
+		start_time = time.time()
 		candidates = es.ask()
 		print "Num candidates:",len(candidates)
 		evls = pool.map(eval_wrapper,candidates)
 		es.tell(candidates,evls)
+		end_time = time.time()
 		es.disp()
 		GEN_CTR=GEN_CTR+1
+		print "Generation took",end_time-start_time,"seconds"
 	cma_res = es.result()
 
-	cma_res[-1].load()
-	res = ("cma",)+cma_res[:-3]+(cma_res[-1].f[:,[1,4,5]],)
+	#cma_res[-1].load()
+	#res = ("cma",)+cma_res[:-3]+(cma_res[-1].f[:,[1,4,5]],)
+	res = ("cma",)+cma_res
 	return res
 
 global_args = {}
