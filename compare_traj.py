@@ -1,6 +1,6 @@
 import stats, dad, btfutil, numpy, sys
 import cPickle,glob,os,os.path
-import multiprocessing
+import multiprocessing, multiprocessing.pool
 
 def diff(btf1,btf2):
 	btf1_traj = dad.split_btf_trajectory(btf1,['xpos','ypos','timage'],augment=False)
@@ -36,7 +36,7 @@ def avg_diff(btf1,btf2):
 		stddev[idx] = numpy.sqrt(stddev[idx]/float(avg_error_count[idx]))
 	return mean,stddev
 
-def subseq_compare(subseq_pickle_filename, dad_logging_dir, framerate=1.0/30.0):
+def subseq_compare(subseq_pickle_filename, dad_logging_dir, output_dir, framerate=1.0/30.0):
 	print "loading [",subseq_pickle_filename,"]"
 	subseqs = cPickle.load(open(subseq_pickle_filename))
 	print "globbing logging dirs from [",dad_logging_dir,"]"
@@ -45,7 +45,8 @@ def subseq_compare(subseq_pickle_filename, dad_logging_dir, framerate=1.0/30.0):
 	for it in range(num_iterations):
 		print "Iteration",it
 		print "Computing errors"
-		sum_error = pool.map(get_subseq_sum_error_wrapper,arg_generator_gssew(dad_logging_dir,subseqs,iteration=it))
+		blerp = arg_generator_gssew(dad_logging_dir,subseqs,iteration=it)
+		sum_error = pool.map(get_subseq_sum_error_wrapper,blerp)
 		print "Aggregating errors"
 		longest_size = len(max(sum_error,key=lambda x: len(x)))
 		total_error = [0,]*longest_size
@@ -55,7 +56,7 @@ def subseq_compare(subseq_pickle_filename, dad_logging_dir, framerate=1.0/30.0):
 				total_error += err[idx]
 				total_error_count += count[idx]
 		avg_error = map(lambda x,y: float(x)/float(y),total_error,total_error_count)
-		outf_name = 'avg_subseq_err_iter%d.dat'%it
+		outf_name = os.path.join(output_dir,'avg_subseq_err_iter%d.dat'%it)
 		print "Writting error to[",outf_name,"]"
 		outf = open(outf_name,'w')
 		for idx in range(longest_size):
@@ -67,16 +68,20 @@ def subseq_compare(subseq_pickle_filename, dad_logging_dir, framerate=1.0/30.0):
 
 def arg_generator_gssew(logging_dir,subseqs,iteration='*'):
 	iteration = str(iteration)
-	logs_it = glob.iglob(os.path.abspath(logging_dir)+"/it_"+iteration+"_seq_*")
+	globstr = os.path.join(os.path.abspath(logging_dir),'it_'+iteration+"_*_seq_*")
+	logs_it = glob.iglob(globstr)
 	for log in logs_it:
 		seq_num = int(log[log.rfind('_seq_')+5:])
-		sim_dir = glob.glob(log+'/FishLRLogging-*-run-0')[0]
-		def arggen():
-			return {'myseq':subseqs[seq_num],'sim_logging_dir':sim_dir}
-		yield arggen
+		#print log
+		sim_dir = glob.glob(os.path.join(log,'FishLRLogger-*-run-0'))[0]
+		#def arggen():
+		#	return {'myseq':subseqs[seq_num],'sim_logging_dir':sim_dir}
+		#yield arggen
+		yield {'myseq':subseqs[seq_num],'sim_logging_dir':sim_dir}
 
 def get_subseq_sum_error_wrapper(arg_gen):
-	args = arg_gen()
+	#args = arg_gen()
+	args = arg_gen
 	return get_subseq_sum_error(myseq=args['myseq'],sim_logging_dir=args['sim_logging_dir'])
 
 def get_subseq_sum_error(myseq,sim_logging_dir):
@@ -112,7 +117,7 @@ def write_gp_data(btf1,btf2,outfname,framerate=None):
 	outf.close()
 
 if __name__ == '__main__':
-	subseq_compare(sys.argv[1],sys.argv[2])
+	subseq_compare(sys.argv[1],sys.argv[2],sys.argv[3])
 	# training_btf = btfutil.BTF()
 	# training_btf.import_from_dir(sys.argv[1])
 	# for idx in range(2,len(sys.argv)):
