@@ -49,18 +49,22 @@ def subseq_compare(subseq_pickle_filename, dad_logging_dir, output_dir, framerat
 		sum_error = pool.map(get_subseq_sum_error_wrapper,blerp)
 		print "Aggregating errors"
 		longest_size = len(max(sum_error,key=lambda x: len(x)))
-		total_error = [0,]*longest_size
-		total_error_count = [0,]*longest_size
+		total_error = list() #[0,]*longest_size
+		total_error_count = list() #[0,]*longest_size
 		for err,count in sum_error:
 			for idx in range(len(err)):
-				total_error += err[idx]
-				total_error_count += count[idx]
+				if idx >= len(total_error):
+					total_error.append(err[idx])
+					total_error_count.append(count[idx])
+				else:
+					total_error[idx] += err[idx]
+					total_error_count[idx] += count[idx]
 		avg_error = map(lambda x,y: float(x)/float(y),total_error,total_error_count)
 		outf_name = os.path.join(output_dir,'avg_subseq_err_iter%d.dat'%it)
 		print "Writting error to[",outf_name,"]"
 		outf = open(outf_name,'w')
-		for idx in range(longest_size):
-			outf.write("%d %d\n"%(float(idx*framerate),float(avg_error[idx])))
+		for idx in range(len(avg_error)):
+			outf.write("%f %f\n"%(float(idx*framerate),float(avg_error[idx])))
 		outf.close()
 		print "***"
 
