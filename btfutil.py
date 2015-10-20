@@ -60,9 +60,11 @@ class BTF:
 				return False
 		return True
 
-	def filter_by_col(self,col):
-		self.mask = [ele.capitalize() == 'True' for ele in self[col]]
-		pass
+	def filter_by_col(self,col,val=None):
+		if val is None:
+			self.mask = [ele.capitalize() == 'True' for ele in self[col]]
+		else:
+			self.mask = [ele == val for ele in self[col]]
 
 	def to_nparr(self):
 		for key in self.column_data:
