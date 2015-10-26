@@ -104,7 +104,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
 	return models
 
-def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False):
+def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False):
 	training_features,training_ys = None,None
 	cutoff = int(len(training_btf_tuple)*0.8)
 	cv_tuple = training_btf_tuple[cutoff:]
@@ -129,6 +129,9 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
+	if fixed_data_ratio:
+		print "initial data size:", training_btf_tuple/(2**N)
+		raise RuntimeError('Kickout')
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = training_features, training_ys
 	pool = multiprocessing.Pool(multiprocessing.cpu_count())
