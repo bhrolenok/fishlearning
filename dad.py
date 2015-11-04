@@ -130,7 +130,11 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
 	if fixed_data_ratio:
-		print "initial data size:", training_btf_tuple/(2**N)
+		print 'computing initial data size'
+		btf_len_sum = 0
+		for btf in training_btf_tuple:
+			btf_len_sum += len(btf['id'])
+		print "initial data size:", btf_len_sum, '/', (2**N), '=', btf_len_sum/float(2**N)
 		raise RuntimeError('Kickout')
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = training_features, training_ys
