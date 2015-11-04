@@ -129,16 +129,17 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
+	models = (learn(training_features,training_ys),)
+	dad_training_features, dad_training_ys = training_features, training_ys
+	pool = multiprocessing.Pool(multiprocessing.cpu_count())
 	if fixed_data_ratio:
 		print 'computing initial data size'
 		btf_len_sum = 0
 		for btf in training_btf_tuple:
 			btf_len_sum += len(btf['id'])
-		print "initial data size:", btf_len_sum, '/', (2**N), '=', btf_len_sum/float(2**N)
+		# print "initial data size:", btf_len_sum, '/', (2**N), '=', btf_len_sum/float(2**N)
+		print "Max iterations:", numpy.log(btf_len_sum/float(multiprocessing.cpu_count()))/numpy.log(2)
 		raise RuntimeError('Kickout')
-	models = (learn(training_features,training_ys),)
-	dad_training_features, dad_training_ys = training_features, training_ys
-	pool = multiprocessing.Pool(multiprocessing.cpu_count())
 	for n in range(N):
 		print "Iteration",n
 		# for idx in range(len(training_btf_tuple)):
