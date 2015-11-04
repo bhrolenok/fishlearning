@@ -132,47 +132,44 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	models = (learn(training_features,training_ys),)
 	dad_training_features, dad_training_ys = training_features, training_ys
 	pool = multiprocessing.Pool(multiprocessing.cpu_count())
+	num_tracklet_samples = list()
+	reserve_tuple_size = None
 	if fixed_data_ratio:
 		print 'computing initial data size'
 		btf_len_sum = 0
 		for btf in training_btf_tuple:
-			btf_len_sum += len(btf['id'])
+			nm_samples = len(btf['id'])
+			num_tracklet_samples.append(nm_samples)
+			btf_len_sum += nm_samples
 		# print "initial data size:", btf_len_sum, '/', (2**N), '=', btf_len_sum/float(2**N)
 		print "Max iterations:", numpy.log(btf_len_sum/float(multiprocessing.cpu_count()))/numpy.log(2)
+		reserve_btf_tuple = training_btf_tuple[multiprocessing.cpu_count():]
+		training_btf_tuple = training_btf_tuple[:multiprocessing.cpu_count()]
+		reserve_trajectories = training_trajectories[multiprocessing.cpu_count():]
+		training_trajectories = training_trajectories[:multiprocessing.cpu_count()]
+		reserve_tuple_size = num_tracklet_samples[multiprocessing.cpu_count():]
+		num_tracklet_samples = num_tracklet_samples[:multiprocessing.cpu_count()]
 		raise RuntimeError('Kickout')
 	for n in range(N):
 		print "Iteration",n
-		# for idx in range(len(training_btf_tuple)):
-		# 	print "Subsequence",idx,"of",len(training_btf_tuple),"\r",
-		# 	# subseqBTF = training_btf_tuple[idx]
-		# 	# training_trajectory = training_trajectories[idx]
-		# 	# sim_btf = predict(models[n],k,subseqBTF,logdir=logdir)
-		# 	# sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
-		# 	# sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'],augment=False)
-		# 	# sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=True)
-		# 	# if dad_training_features is None:
-		# 	# 	dad_training_features, dad_training_ys = training_features, training_ys
-		# 	# #print sim_trajectory.keys(), training_trajectory.keys()
-		# 	# for eyed in sim_trajectory:
-		# 	# 	traj = sim_trajectory[eyed]
-		# 	# 	traj_feats = sim_traj_features[eyed]
-		# 	# 	for row_idx in range(1,min(training_trajectory[eyed].shape[0]-1,traj.shape[0]-1)):
-		# 	# 		dad_sample_feats = traj_feats[row_idx]
-		# 	# 		dad_sample_ys = training_trajectory[eyed][row_idx+1]-traj[row_idx]
-		# 	# 		dad_training_features = numpy.row_stack([dad_training_features,dad_sample_feats])
-		# 	# 		dad_training_ys = numpy.row_stack([dad_training_ys,dad_sample_ys])
-		# 	tmp_feats,tmp_ys = do_subseq_inner_loop(training_btf_tuple[idx],training_trajectories[idx],predict,models[n],k,logdir,feature_names)
-		# 	if dad_training_features is None:
-		# 		dad_training_features, dad_training_ys = training_features, training_ys
-		# 	dad_training_features = numpy.row_stack([dad_training_features,tmp_feats])
-		# 	dad_training_ys = numpy.row_stack([dad_training_ys,tmp_ys])
-		# results = map(lambda tpl, trajs: do_subseq_inner_loop(tpl,trajs,predict,models[n],k,logdir,feature_names),training_btf_tuple, training_trajectories)
 		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,models[n],k,logdir,feature_names,n))
 		new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		# new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		dad_training_features = numpy.row_stack([dad_training_features,new_feats])
 		dad_training_ys = numpy.row_stack([dad_training_ys,new_ys])
+		nm_dad_samples = len(dad_training_ys)
+		if fixed_data_ratio:
+			added_tuple_size = 0
+			while (nm_dad_samples > added_tuple_size) and (len(reserve_trajectories) > 0):
+				training_btf_tuple.append(reserve_btf_tuple.pop())
+				training_trajectories.append(reserve_trajectories.pop())
+				num_tracklet_samples.append(reserve_tuple_size.pop())
+				added_tuple_size += num_tracklet_samples[-1]
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
+		if fixed_data_ratio:
+			if len(reserve_trajectories) <= 0:
+				print "Ran out of data after iteration", n
+				break
 	if savetofile:
 		picklename = os.path.join(logdir,'dad-subseq-results.p')
 		print "Saving models to [%s]"%(picklename,)
