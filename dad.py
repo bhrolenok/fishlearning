@@ -149,7 +149,6 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		training_trajectories = training_trajectories[:multiprocessing.cpu_count()]
 		reserve_tuple_size = num_tracklet_samples[multiprocessing.cpu_count():]
 		num_tracklet_samples = num_tracklet_samples[:multiprocessing.cpu_count()]
-		raise RuntimeError('Kickout')
 	for n in range(N):
 		print "Iteration",n
 		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,models[n],k,logdir,feature_names,n))
