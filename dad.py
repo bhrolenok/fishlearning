@@ -105,7 +105,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 	return models
 
 def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False):
-	training_features,training_ys = None,None
+	training_features,training_ys = list(),list()
 	cutoff = int(len(training_btf_tuple)*0.8)
 	cv_tuple = training_btf_tuple[cutoff:]
 	training_btf_tuple = training_btf_tuple[:cutoff]
@@ -114,12 +114,14 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	print "Logging to",logdir
 	for btf in training_btf_tuple:
 		f,y = btf2data(btf,feature_names,augment=True)
-		if training_features is None:
-			training_features = f
-			training_ys = y
-		else:
-			training_features = numpy.row_stack([training_features,f])
-			training_ys = numpy.row_stack([training_ys,y])
+		training_features.append(f)
+		training_ys.append(y)
+		#if training_features is None:
+		#	training_features = f
+		#	training_ys = y
+		#else:
+		#	training_features = numpy.row_stack([training_features,f])
+		#	training_ys = numpy.row_stack([training_ys,y])
 		training_trajectories.append(split_btf_trajectory(btf,['xpos','ypos','timage'],augment=False))
 	cv_features, cv_ys = None,None
 	for cv_btf in cv_tuple:
@@ -129,8 +131,8 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
-	models = (learn(training_features,training_ys),)
-	dad_training_features, dad_training_ys = training_features, training_ys
+	#models = (learn(training_features,training_ys),)
+	#dad_training_features, dad_training_ys = training_features, training_ys
 	pool = multiprocessing.Pool(multiprocessing.cpu_count())
 	num_tracklet_samples = list()
 	reserve_tuple_size = None
@@ -142,31 +144,53 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			num_tracklet_samples.append(nm_samples)
 			btf_len_sum += nm_samples
 		# print "initial data size:", btf_len_sum, '/', (2**N), '=', btf_len_sum/float(2**N)
-		print "Max iterations:", numpy.log(btf_len_sum/float(multiprocessing.cpu_count()))/numpy.log(2)
-		reserve_btf_tuple = training_btf_tuple[multiprocessing.cpu_count():]
-		training_btf_tuple = training_btf_tuple[:multiprocessing.cpu_count()]
-		reserve_trajectories = training_trajectories[multiprocessing.cpu_count():]
-		training_trajectories = training_trajectories[:multiprocessing.cpu_count()]
-		reserve_tuple_size = num_tracklet_samples[multiprocessing.cpu_count():]
-		num_tracklet_samples = num_tracklet_samples[:multiprocessing.cpu_count()]
+		init_num_tuples = min(4,multiprocessing.cpu_count())
+		print 'initial num tuples:',init_num_tuples
+		print "Max iterations:", numpy.log(btf_len_sum/float(init_num_tuples))/numpy.log(2)
+		#btf's
+		reserve_btf_tuple = training_btf_tuple[init_num_tuples:]
+		training_btf_tuple = training_btf_tuple[:init_num_tuples]
+		#trajectories
+		reserve_trajectories = training_trajectories[init_num_tuples:]
+		training_trajectories = training_trajectories[:init_num_tuples]
+		#num samples
+		reserve_tuple_size = num_tracklet_samples[init_num_tuples:]
+		num_tracklet_samples = num_tracklet_samples[:init_num_tuples]
+		#initial training sets
+		reserve_training_features = training_features[init_num_tuples:]
+		training_features = training_features[:init_num_tuples]
+		reserve_training_ys = training_ys[init_num_tuples:]
+		training_ys = training_ys[:init_num_tuples]
+		print 'Initial samples:',sum(num_tracklet_samples)
+		print 'Reserved samples:', sum(reserve_tuple_size)
+	models = (learn(numpy.row_stack(training_features),numpy.row_stack(training_ys)),)
+	#dad_training_features, dad_training_ys = training_features, training_ys
+	dad_training_features, dad_training_ys, num_dad_samples = list(), list(), 0
 	for n in range(N):
 		print "Iteration",n
 		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,models[n],k,logdir,feature_names,n))
 		new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		# new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
-		dad_training_features = numpy.row_stack([dad_training_features,new_feats])
-		dad_training_ys = numpy.row_stack([dad_training_ys,new_ys])
-		nm_dad_samples = len(dad_training_ys)
+		#dad_training_features = numpy.row_stack([dad_training_features,new_feats])
+		dad_training_features.append(new_feats)
+		#dad_training_ys = numpy.row_stack([dad_training_ys,new_ys])
+		dad_training_ys.append(new_ys)
+		#nm_dad_samples = len(dad_training_ys)
+		num_dad_samples += len(new_ys)
+		print "num dad samples:",num_dad_samples
 		if fixed_data_ratio:
 			added_tuple_size = 0
-			while (nm_dad_samples > added_tuple_size) and (len(reserve_trajectories) > 0):
+			while (num_dad_samples > added_tuple_size) and (len(reserve_trajectories) > 0):
 				training_btf_tuple.append(reserve_btf_tuple.pop())
 				training_trajectories.append(reserve_trajectories.pop())
 				num_tracklet_samples.append(reserve_tuple_size.pop())
 				added_tuple_size += num_tracklet_samples[-1]
-		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
+				training_features.append(reserve_training_features.pop())
+				training_ys.append(reserve_training_ys.pop())
+		models = models + (learn(numpy.row_stack(dad_training_features+training_features),\
+					 numpy.row_stack(dad_training_ys+training_ys),cv_features,cv_ys),)
 		if fixed_data_ratio:
-			if len(reserve_trajectories) <= 0:
+			if not(len(reserve_trajectories) > 0):
 				print "Ran out of data after iteration", n
 				break
 	if savetofile:
@@ -219,7 +243,7 @@ def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforive
 
 def subseqmain(subseq_fname, num_models, max_seq_len):
 	print "loading btfs from",subseq_fname
-	btf_tuple = cPickle.load(open(subseq_fname))
+	btf_tuple = list(cPickle.load(open(subseq_fname)))
 	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR, savetofile=True, fixed_data_ratio=True)
 	#cPickle.dump(models,open("dad-subseq-results.p","w"))
 
