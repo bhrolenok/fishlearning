@@ -1,4 +1,4 @@
-import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile, multiprocessing
+import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile, multiprocessing, random
 
 class KNN():
 	def __init__(self,features,ys):
@@ -106,6 +106,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 
 def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False):
 	training_features,training_ys = list(),list()
+	#randomize sample order
 	cutoff = int(len(training_btf_tuple)*0.8)
 	cv_tuple = training_btf_tuple[cutoff:]
 	training_btf_tuple = training_btf_tuple[:cutoff]
@@ -165,7 +166,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		print 'Reserved samples:', sum(reserve_tuple_size)
 	models = (learn(numpy.row_stack(training_features),numpy.row_stack(training_ys)),)
 	#dad_training_features, dad_training_ys = training_features, training_ys
-	dad_training_features, dad_training_ys, num_dad_samples = list(), list(), 0
+	dad_training_features, dad_training_ys, num_dad_samples = list(), list(), sum(num_tracklet_samples)
 	for n in range(N):
 		print "Iteration",n
 		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,models[n],k,logdir,feature_names,n))
