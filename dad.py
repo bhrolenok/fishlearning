@@ -43,6 +43,12 @@ def learnLR(features,ys,cv_features=None,cv_ys=None):
 		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
 	return result[0]
 
+def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0):
+	result = numpy.linalg.lstsq(features.T.dot(features)+ lamb*numpy.identity(features.shape[1]),features.T.dot(ys))
+	if not((cv_features is None) or (cv_ys is None)):
+		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
+	return result[0]
+
 def learnKNN(features,ys):
 	return KNN(features,ys)
 
