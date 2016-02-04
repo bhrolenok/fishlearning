@@ -86,6 +86,22 @@ def predict_KNN(model, num_steps, initialPlacementBTF,logdir=None,feature_names=
 	rv.filter_by_col('dbool')
 	return rv
 
+def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0):
+	result = numpy.linalg.lstsq(features.T.dot(features)+ lamb*numpy.identity(features.shape[1]),features.T.dot(ys))
+	if not((cv_features is None) or (cv_ys is None)):
+		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
+	return result[0]
+
+def generate_feature_map(n_f,D):
+	# n_f = features.shape[1]
+	ws = numpy.random.multivariate_normal(mean=numpy.zeros(n_f),cov=numpy.eye(n_f),size=D)
+	bs = numpy.random.random(size=n_f)*numpy.pi*2.0
+	def feature_map(feats):
+		return numpy.cos((ws.dot(feats)+numpy.tile(bs,(1,feats.shape[0]))).T)
+	feature_map.ws = ws
+	feature_map.bs = bs
+	return feature_map
+
 def learnKNN(features,ys):
 	return KNN(features,ys)
 
