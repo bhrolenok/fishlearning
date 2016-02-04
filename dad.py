@@ -1,4 +1,4 @@
-import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile, multiprocessing, random
+import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile, multiprocessing, random, pandas
 
 class KNN():
 	def __init__(self,features,ys):
@@ -6,8 +6,20 @@ class KNN():
 		self.ys = ys
 	def query(self,features,k):
 		self.ys[self.kdt.query(features,k)[1]]
+	def to_csv(self,outf,feature_names):
+		data_df = pandas.DataFrame(numpy.column_stack(self.kdt.data,self.ys),columns=feature_names)
+		data_df.to_csv(outf,index=False)
 
-def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
+def writeInitialPlacement(outf,initialPlacementBTF):
+	rowIdx = 0
+	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+		outf.write(initialPlacementBTF['id'][rowIdx])
+		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
+		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
+		outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
+		rowIdx += 1
+
+def predictLR(model,num_steps,initialPlacementBTF,logdir=None,feature_names=None):
 	if logdir is None:
 		logdir = os.getcwd()
 	
@@ -18,13 +30,15 @@ def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
 	outf = open(os.path.join(logdir,"initial_placement.txt"),"w")
-	rowIdx = 0
-	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
-		outf.write(initialPlacementBTF['id'][rowIdx])
-		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
-		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
-		outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
-		rowIdx += 1
+	# rowIdx = 0
+	# while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+	# 	outf.write(initialPlacementBTF['id'][rowIdx])
+	# 	outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
+	# 	outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
+	# 	outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
+	# 	rowIdx += 1
+	# outf.close()
+	writeInitialPlacement(outf,initialPlacementBTF)
 	outf.close()
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
 	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed', os.path.join(logdir,'initial_placement.txt'),'-nogui','-logging', logdir, '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -42,6 +56,35 @@ def learnLR(features,ys,cv_features=None,cv_ys=None):
 	if not((cv_features is None) or (cv_ys is None)):
 		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
 	return result[0]
+
+def predict_KNN(model, num_steps, initialPlacementBTF,logdir=None,feature_names=None):
+	if logdir is None:
+		logdir = os.getcwd()
+	outname = os.path.join(logdir,'knn_dataset.csv')
+	prefix = "[BTFLogger] Starting new logs in"
+	outf = open(outname,'w')
+	model.to_csv(outf,feature_names)
+	outf.close()
+	placementFname = os.path.join(logdir,'initial_placement.txt')
+	outf = open(placementFname,'w')
+	writeInitialPlacement(outf,initialPlacementBTF)
+	outf.close()
+	proc = subprocess.Popen(['java',\
+							'biosim.app.fishreynolds.FishReynods',\
+							'-placed',placementFname,\
+							'-nogui',\
+							'-logging',logdir,\
+							'-lr', outname,\
+							'-for',str(num_steps)],\
+							stdout = subprocess.PIPE, stderr=subprocess.PIPE)
+	output,errors = proc.communicate()
+	trace_btfdir_start = len(prefix)+output.index(prefix)
+	trace_btfdir_end = output.index('\n',trace_btfdir_start)
+	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
+	rv = btfutil.BTF()
+	rv.import_from_dir(trace_btfdir)
+	rv.filter_by_col('dbool')
+	return rv
 
 def learnKNN(features,ys):
 	return KNN(features,ys)
@@ -107,6 +150,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False):
 	training_features,training_ys = list(),list()
 	#randomize sample order
+	random.shuffle(training_btf_tuple)
 	cutoff = int(len(training_btf_tuple)*0.8)
 	cv_tuple = training_btf_tuple[cutoff:]
 	training_btf_tuple = training_btf_tuple[:cutoff]
@@ -210,7 +254,7 @@ def multiproc_hack(args):
 	return do_subseq_inner_loop(args[0],args[1],args[2],args[3],args[4],args[5],args[6])
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
-	sim_btf = predict(model,k,subseqBTF,logdir)
+	sim_btf = predict(model,k,subseqBTF,logdir,["sepX", "sepY","oriX","oriY","cohX","cohY","wallX","wallY","dvelX","dvelY","dvelT"])
 	sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
 	sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
 	sim_traj_features = split_btf_trajectory(sim_btf, feature_names, augment=True)
