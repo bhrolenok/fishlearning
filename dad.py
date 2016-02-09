@@ -105,7 +105,13 @@ def generate_feature_map(n_f,D):
 
 def learnKNN(features,ys,feature_column_names=None):
 	#return KNN(features,ys)
-	return pandas.DataFrame(numpy.column_stack((features,ys),),columns=feature_column_names)
+	if (features[:,-1] == 1.0).all():
+		#passed features must be augmented, strip it
+		#TO DO: change main function to pass in flag to enable/disable augmenting feature set
+		combined = numpy.column_stack((features[:,:-1],ys),)
+	else:
+		combined = numpy.column_stack((features,ys),)
+	return pandas.DataFrame(combined,columns=feature_column_names)
 
 def btf2data(btf,feature_names,augment):
 	features = numpy.column_stack([map(lambda line: map(float,line.split()), btf[col_name]) for col_name in feature_names])
@@ -226,7 +232,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		training_ys = training_ys[:init_num_tuples]
 		print 'Initial samples:',sum(num_tracklet_samples)
 		print 'Reserved samples:', sum(reserve_tuple_size)
-	models = (learn(numpy.row_stack(training_features),numpy.row_stack(training_ys),feature_column_names),)
+	models = (learn(numpy.row_stack(training_features),numpy.row_stack(training_ys),feature_column_names=feature_column_names),)
 	#dad_training_features, dad_training_ys = training_features, training_ys
 	dad_training_features, dad_training_ys, num_dad_samples = list(), list(), sum(num_tracklet_samples)
 	for n in range(N):
