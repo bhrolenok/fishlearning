@@ -19,7 +19,7 @@ def writeInitialPlacement(outf,initialPlacementBTF):
 		outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
 		rowIdx += 1
 
-def predictLR(model,num_steps,initialPlacementBTF,logdir=None,feature_names=None):
+def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
 	if logdir is None:
 		logdir = os.getcwd()
 	
@@ -51,19 +51,20 @@ def predictLR(model,num_steps,initialPlacementBTF,logdir=None,feature_names=None
 	rv.filter_by_col('dbool')
 	return rv
 
-def learnLR(features,ys,cv_features=None,cv_ys=None):
+def learnLR(features,ys,cv_features=None,cv_ys=None,feature_column_names=None):
 	result = numpy.linalg.lstsq(features,ys)
 	if not((cv_features is None) or (cv_ys is None)):
 		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
 	return result[0]
 
-def predictKNN(model, num_steps, initialPlacementBTF,logdir=None,feature_names=None):
+def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	if logdir is None:
 		logdir = os.getcwd()
 	outname = os.path.join(logdir,'knn_dataset.csv')
 	prefix = "[BTFLogger] Starting new logs in"
 	outf = open(outname,'w')
-	model.to_csv(outf,feature_names)
+	# model.to_csv(outf,feature_names)
+	model.to_csv(outf,index=False)
 	outf.close()
 	placementFname = os.path.join(logdir,'initial_placement.txt')
 	outf = open(placementFname,'w')
@@ -86,7 +87,7 @@ def predictKNN(model, num_steps, initialPlacementBTF,logdir=None,feature_names=N
 	rv.filter_by_col('dbool')
 	return rv
 
-def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0):
+def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0,feature_column_names=None):
 	result = numpy.linalg.lstsq(features.T.dot(features)+ lamb*numpy.identity(features.shape[1]),features.T.dot(ys))
 	if not((cv_features is None) or (cv_ys is None)):
 		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
@@ -102,7 +103,8 @@ def generate_feature_map(n_f,D):
 	feature_map.bs = bs
 	return feature_map
 
-def learnKNN(features,ys):
+def learnKNN(features,ys,feature_column_names=None):
+	return pandas.DataFrame(numpy.column_stack(self.kdt.data,self.ys),columns=feature_column_names)
 	return KNN(features,ys)
 
 def btf2data(btf,feature_names,augment):
@@ -118,7 +120,7 @@ def split_btf_trajectory(btf,feature_names,augment):
 	unique_ids = set(npid)
 	return {eyed:features[npid==eyed] for eyed in unique_ids}
 
-def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=None):
+def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=None,feature_column_names=None):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
@@ -137,7 +139,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 	# 	predict_steps = min(min_seq_length,k)
 	# print "k=",predict_steps
 	# training_traj_features = split_btf_trajectory(btf,feature_names)
-	models = (learn(training_features,training_ys),)
+	models = (learn(training_features,training_ys,feature_column_names=feature_column_names),)
 	dad_training_features, dad_training_ys = None, None
 	for n in range(N):
 		sim_btf = predict(models[n],k,training_dir)
@@ -160,10 +162,10 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 			print "Reweighting samples:",weight_dad_samples
 			dad_training_features = numpy.row_stack([dad_training_features,]*weight_dad_samples)
 			dad_training_ys = numpy.row_stack([dad_training_ys,]*weight_dad_samples)
-		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys),)
+		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys,feature_column_names=feature_column_names),)
 	return models
 
-def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False):
+def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False,feature_column_names=None):
 	training_features,training_ys = list(),list()
 	#randomize sample order
 	random.shuffle(training_btf_tuple)
@@ -224,7 +226,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 		training_ys = training_ys[:init_num_tuples]
 		print 'Initial samples:',sum(num_tracklet_samples)
 		print 'Reserved samples:', sum(reserve_tuple_size)
-	models = (learn(numpy.row_stack(training_features),numpy.row_stack(training_ys)),)
+	models = (learn(numpy.row_stack(training_features),numpy.row_stack(training_ys),feature_column_names),)
 	#dad_training_features, dad_training_ys = training_features, training_ys
 	dad_training_features, dad_training_ys, num_dad_samples = list(), list(), sum(num_tracklet_samples)
 	for n in range(N):
@@ -249,7 +251,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 				training_features.append(reserve_training_features.pop())
 				training_ys.append(reserve_training_ys.pop())
 		models = models + (learn(numpy.row_stack(dad_training_features+training_features),\
-					 numpy.row_stack(dad_training_ys+training_ys),cv_features,cv_ys),)
+					 numpy.row_stack(dad_training_ys+training_ys),cv_features,cv_ys,feature_column_names=feature_column_names),)
 		if fixed_data_ratio:
 			if not(len(reserve_trajectories) > 0):
 				print "Ran out of data after iteration", n
@@ -270,7 +272,7 @@ def multiproc_hack(args):
 	return do_subseq_inner_loop(args[0],args[1],args[2],args[3],args[4],args[5],args[6])
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
-	sim_btf = predict(model,k,subseqBTF,logdir,["sepX", "sepY","oriX","oriY","cohX","cohY","wallX","wallY","dvelX","dvelY","dvelT"])
+	sim_btf = predict(model,k,subseqBTF,logdir)
 	sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
 	sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
 	sim_traj_features = split_btf_trajectory(sim_btf, feature_names, augment=True)
@@ -302,22 +304,27 @@ def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforive
 	print "Iteration:",rv_idx
 	return model_list[rv_idx]
 
-def subseqmain(subseq_fname, num_models, max_seq_len):
+def subseqmain(subseq_fname, num_models, max_seq_len,feature_column_names=None):
 	print "loading btfs from",subseq_fname
 	btf_tuple = list(cPickle.load(open(subseq_fname)))
 	#models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR, savetofile=True, fixed_data_ratio=True)
-	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnKNN,predictKNN, savetofile=True, fixed_data_ratio=True)
+	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnKNN,predictKNN, savetofile=True, fixed_data_ratio=True,feature_column_names=feature_column_names)
 	#cPickle.dump(models,open("dad-subseq-results.p","w"))
 
-def main(training_dir,num_models,max_seq_len):
-	models = dad(num_models,max_seq_len,training_dir,learnLR,predictLR)
+def main(training_dir,num_models,max_seq_len,feature_column_names=None):
+	models = dad(num_models,max_seq_len,training_dir,learnLR,predictLR,feature_column_names=feature_column_names)
 	# print models
 	cPickle.dump(models,open("dad-results.p","w"))
 
 if __name__ == '__main__':
 	if len(sys.argv) == 4:
 		# main(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
-		subseqmain(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
+		subseqmain(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),\
+			feature_column_names=[	"sepX", "sepY",\
+									"oriX","oriY",\
+									"cohX","cohY",\
+									"wallX","wallY",\
+									"dvelX","dvelY","dvelT"])
 	elif len(sys.argv) == 3:
 		model_list = cPickle.load(open(sys.argv[2]))
 		best_model = find_best_model(sys.argv[1],model_list)
