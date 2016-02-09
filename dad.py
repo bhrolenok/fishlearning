@@ -71,14 +71,17 @@ def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	writeInitialPlacement(outf,initialPlacementBTF)
 	outf.close()
 	proc = subprocess.Popen(['java',\
-							'biosim.app.fishreynolds.FishReynods',\
+							'biosim.app.fishreynolds.FishReynolds',\
 							'-placed',placementFname,\
 							'-nogui',\
 							'-logging',logdir,\
-							'-lr', outname,\
+							'-knn', outname,\
 							'-for',str(num_steps)],\
 							stdout = subprocess.PIPE, stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
+	#if len(errors) > 0:
+	#	print "Errors:",errors
+	#	print "Output:",output
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index('\n',trace_btfdir_start)
 	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
@@ -103,14 +106,15 @@ def generate_feature_map(n_f,D):
 	feature_map.bs = bs
 	return feature_map
 
-def learnKNN(features,ys,feature_column_names=None):
+def learnKNN(features,ys,cv_features=None,cv_ys=None, feature_column_names=None):
 	#return KNN(features,ys)
-	if (features[:,-1] == 1.0).all():
+	#if (features[:,-1] == 1.0).all():
 		#passed features must be augmented, strip it
 		#TO DO: change main function to pass in flag to enable/disable augmenting feature set
-		combined = numpy.column_stack((features[:,:-1],ys),)
-	else:
-		combined = numpy.column_stack((features,ys),)
+	#	combined = numpy.column_stack((features[:,:-1],ys),)
+	#else:
+	#	combined = numpy.column_stack((features,ys),)
+	combined = numpy.column_stack((features,ys),)
 	return pandas.DataFrame(combined,columns=feature_column_names)
 
 def btf2data(btf,feature_names,augment):
@@ -130,7 +134,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
-	features, ys = btf2data(btf,feature_names,augment=True)
+	features, ys = btf2data(btf,feature_names,augment=(learn!=learnKNN))
 	tmpidx = int(features.shape[0]*0.8)
 	training_features = features[:tmpidx,:]
 	cv_features = features[tmpidx:,:]
@@ -149,9 +153,9 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 	dad_training_features, dad_training_ys = None, None
 	for n in range(N):
 		sim_btf = predict(models[n],k,training_dir)
-		sim_features,sim_ys = btf2data(sim_btf,feature_names,augment=True)
+		sim_features,sim_ys = btf2data(sim_btf,feature_names,augment=(learn!=learnKNN))
 		sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'],augment=False)
-		sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=True)
+		sim_traj_features = split_btf_trajectory(sim_btf,feature_names,augment=(learn!=learnKNN))
 		if dad_training_features is None:
 			dad_training_features, dad_training_ys = training_features, training_ys
 		for eyed in sim_trajectory:
@@ -182,7 +186,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	logdir = tempfile.mkdtemp(suffix='_dad',prefix='logging_',dir=os.getcwd())
 	print "Logging to",logdir
 	for btf in training_btf_tuple:
-		f,y = btf2data(btf,feature_names,augment=True)
+		f,y = btf2data(btf,feature_names,augment=(learn!=learnKNN))
 		training_features.append(f)
 		training_ys.append(y)
 		#if training_features is None:
@@ -195,9 +199,9 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	cv_features, cv_ys = None,None
 	for cv_btf in cv_tuple:
 		if cv_features is None:
-			cv_features,cv_ys = btf2data(cv_btf,feature_names,augment=True)
+			cv_features,cv_ys = btf2data(cv_btf,feature_names,augment=(learn!=learnKNN))
 		else:
-			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=True)
+			tmpF, tmpY = btf2data(cv_btf,feature_names,augment=(learn!=learnKNN))
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
 	#models = (learn(training_features,training_ys),)
@@ -279,9 +283,9 @@ def multiproc_hack(args):
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
 	sim_btf = predict(model,k,subseqBTF,logdir)
-	sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=True)
+	sim_features, sim_ys = btf2data(sim_btf, feature_names, augment=(predict!=predictKNN))
 	sim_trajectory = split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
-	sim_traj_features = split_btf_trajectory(sim_btf, feature_names, augment=True)
+	sim_traj_features = split_btf_trajectory(sim_btf, feature_names, augment=(predict!=predictKNN))
 	feats_rv = list()
 	ys_rv = list()
 	for eyed in sim_trajectory:
@@ -298,11 +302,11 @@ def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,fe
 		ys_rv.append(traj_ys_rv)
 	return numpy.row_stack(feats_rv), numpy.row_stack(ys_rv)
 
-def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec']):
+def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],use_augment=True):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
-	features, ys = btf2data(btf,feature_names,augment=True)
+	features, ys = btf2data(btf,feature_names,augment=use_augment)
 	errors = map(lambda m: numpy.linalg.norm(ys-features.dot(m)), model_list)
 	rv_min = min(errors)
 	rv_idx = errors.index(rv_min)
