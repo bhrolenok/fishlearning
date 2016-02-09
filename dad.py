@@ -57,7 +57,7 @@ def learnLR(features,ys,cv_features=None,cv_ys=None):
 		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
 	return result[0]
 
-def predict_KNN(model, num_steps, initialPlacementBTF,logdir=None,feature_names=None):
+def predictKNN(model, num_steps, initialPlacementBTF,logdir=None,feature_names=None):
 	if logdir is None:
 		logdir = os.getcwd()
 	outname = os.path.join(logdir,'knn_dataset.csv')
@@ -305,7 +305,8 @@ def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforive
 def subseqmain(subseq_fname, num_models, max_seq_len):
 	print "loading btfs from",subseq_fname
 	btf_tuple = list(cPickle.load(open(subseq_fname)))
-	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR, savetofile=True, fixed_data_ratio=True)
+	#models = dad_subseq(num_models,max_seq_len,btf_tuple,learnLR,predictLR, savetofile=True, fixed_data_ratio=True)
+	models = dad_subseq(num_models,max_seq_len,btf_tuple,learnKNN,predictKNN, savetofile=True, fixed_data_ratio=True)
 	#cPickle.dump(models,open("dad-subseq-results.p","w"))
 
 def main(training_dir,num_models,max_seq_len):
