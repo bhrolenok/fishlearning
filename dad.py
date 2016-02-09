@@ -105,7 +105,7 @@ def generate_feature_map(n_f,D):
 
 def learnKNN(features,ys,feature_column_names=None):
 	#return KNN(features,ys)
-	return pandas.DataFrame(numpy.column_stack(features,ys),columns=feature_column_names)
+	return pandas.DataFrame(numpy.column_stack((features,ys),),columns=feature_column_names)
 
 def btf2data(btf,feature_names,augment):
 	features = numpy.column_stack([map(lambda line: map(float,line.split()), btf[col_name]) for col_name in feature_names])
