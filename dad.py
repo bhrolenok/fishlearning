@@ -1,4 +1,4 @@
-import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile, multiprocessing, random, pandas
+import numpy, btfutil, scipy.spatial, subprocess, time, sys, cPickle, os, os.path, tempfile, multiprocessing, random, pandas, tarfile, shutil
 
 class KNN():
 	def __init__(self,features,ys):
@@ -88,6 +88,12 @@ def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	rv = btfutil.BTF()
 	rv.import_from_dir(trace_btfdir)
 	rv.filter_by_col('dbool')
+	rv.load_all_columns()
+	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
+	tf.add(logdir)
+	tf.close()
+	# shutil.rmtree(logdir)
+	print "Removing",logdir
 	return rv
 
 def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0,feature_column_names=None):
@@ -262,6 +268,10 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 				training_ys.append(reserve_training_ys.pop())
 		models = models + (learn(numpy.row_stack(dad_training_features+training_features),\
 					 numpy.row_stack(dad_training_ys+training_ys),cv_features,cv_ys,feature_column_names=feature_column_names),)
+		if savetofile:
+			picklename = os.path.join(logdir,'dad-subseq-results.p')
+			print "Saving models to [%s]"%(picklename,)
+			cPickle.dump(models,open(picklename,'w'))
 		if fixed_data_ratio:
 			if not(len(reserve_trajectories) > 0):
 				print "Ran out of data after iteration", n
