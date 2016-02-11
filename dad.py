@@ -92,8 +92,7 @@ def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
 	tf.add(logdir)
 	tf.close()
-	# shutil.rmtree(logdir)
-	print "Removing",logdir
+	shutil.rmtree(logdir)
 	return rv
 
 def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0,feature_column_names=None):
