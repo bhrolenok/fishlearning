@@ -1,4 +1,5 @@
 import glob, os.path, string, numpy, time
+import tarfile
 
 VERBOSE_TIMEOUT=30 #Time in seconds between print outs
 
@@ -24,10 +25,19 @@ class BTF:
 		self.column_filenames = dict()
 		self.column_data = dict()
 		self.mask = None
+		self.tfile = None
 
 	def import_from_dir(self,dirname):
 		self.mask = None
 		new_columns = glob.glob(os.path.join(dirname,'*.btf'))
+		for column in new_columns:
+			cname = os.path.basename(column)[:-4]
+			self.column_filenames[cname] = column
+		self.tfile = None
+
+	def import_from_tar(self,tarname):
+		self.tfile = tarfile.open(tarname)
+		new_columns = filter(lambda nme: nme[-4:].lower()=='.btf', self.tfile.getnames())
 		for column in new_columns:
 			cname = os.path.basename(column)[:-4]
 			self.column_filenames[cname] = column
@@ -44,7 +54,11 @@ class BTF:
 
 	def load_column(self,cname):
 		if cname in self.column_filenames:
-			self.column_data[cname] = tuple(map(string.strip, verbose_readlines(open(self.column_filenames[cname]))))
+			if self.tfile is None:
+				sourcef = open(self.column_filenames[cname])
+			else:
+				sourcef = self.tfile.extractfile(self.column_filenames[cname])
+			self.column_data[cname] = tuple(map(string.strip, verbose_readlines(sourcef)))
 			return True
 		return False
 
