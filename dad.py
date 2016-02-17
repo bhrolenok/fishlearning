@@ -85,14 +85,15 @@ def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index('\n',trace_btfdir_start)
 	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
-	rv = btfutil.BTF()
-	rv.import_from_dir(trace_btfdir)
-	rv.filter_by_col('dbool')
-	rv.load_all_columns()
 	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
 	tf.add(logdir)
 	tf.close()
 	shutil.rmtree(logdir)
+	rv = btfutil.BTF()
+	#rv.import_from_dir(trace_btfdir)
+	rv.import_from_tar(logdir+".tar.bz2")
+	rv.filter_by_col('dbool')
+	#rv.load_all_columns()
 	return rv
 
 def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0,feature_column_names=None):
