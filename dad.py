@@ -121,8 +121,8 @@ def learnKNN(features,ys,cv_features=None,cv_ys=None, feature_column_names=None)
 	#else:
 	#	combined = numpy.column_stack((features,ys),)
 	if not(cv_features is None):
-		knn = KNN(features=features,ys=ys)
-		knn_ys = knn.query(cv_features,k=3).mean(axis=1)
+		knn_kdt = scipy.spatial.cKDTree(features) #KNN(features=features,ys=ys)
+		knn_ys = ys[knn_kdt.query(cv_features,3)[1]].mean(axis=1)
 		print "CV error:",numpy.linalg.norm(cv_ys - knn_ys)
 	combined = numpy.column_stack((features,ys),)
 	return pandas.DataFrame(combined,columns=feature_column_names)
