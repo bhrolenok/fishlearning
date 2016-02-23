@@ -1,5 +1,6 @@
 import glob, os.path, string, numpy, time
 import tarfile
+import numpy
 
 VERBOSE_TIMEOUT=30 #Time in seconds between print outs
 
@@ -185,3 +186,25 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 		btf = tail_btf
 		depth=depth+1
 	return rv
+
+def writeInitialPlacement(outf,initialPlacementBTF):
+	rowIdx = 0
+	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+		outf.write(initialPlacementBTF['id'][rowIdx])
+		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
+		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
+		outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
+		rowIdx += 1
+
+def btf2data(btf,feature_names,augment):
+	features = numpy.column_stack([map(lambda line: map(float,line.split()), btf[col_name]) for col_name in feature_names])
+	if augment:
+		features = numpy.column_stack([features,numpy.ones(features.shape[0])])
+	ys = numpy.array(map(lambda line: map(float, line.split()), btf['dvel']))
+	return features,ys
+
+def split_btf_trajectory(btf,feature_names,augment):
+	features,ys = btf2data(btf,feature_names,augment)
+	npid = numpy.array(map(int,btf['id']))
+	unique_ids = set(npid)
+	return {eyed:features[npid==eyed] for eyed in unique_ids}
