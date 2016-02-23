@@ -3,7 +3,7 @@ import random
 import subprocess, multiprocessing
 import time, sys, os, os.path, tempfile, tarfile, shutil
 import cPickle
-import btfutil, linreg
+import btfutil, linreg, knn
 
 def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=None,feature_column_names=None):
 	btf = btfutil.BTF()
@@ -61,16 +61,16 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	logdir = tempfile.mkdtemp(suffix='_dad',prefix='logging_',dir=os.getcwd())
 	print "Logging to",logdir
 	for btf in training_btf_tuple:
-		f,y = btfutil.btf2data(btf,feature_names,augment=(learn!=learnKNN))
+		f,y = btfutil.btf2data(btf,feature_names,augment=(learn!=knn.learnKNN))
 		training_features.append(f)
 		training_ys.append(y)
 		training_trajectories.append(btfutil.split_btf_trajectory(btf,['xpos','ypos','timage'],augment=False))
 	cv_features, cv_ys = None,None
 	for cv_btf in cv_tuple:
 		if cv_features is None:
-			cv_features,cv_ys = btfutil.btf2data(cv_btf,feature_names,augment=(learn!=learnKNN))
+			cv_features,cv_ys = btfutil.btf2data(cv_btf,feature_names,augment=(learn!=knn.learnKNN))
 		else:
-			tmpF, tmpY = btfutil.btf2data(cv_btf,feature_names,augment=(learn!=learnKNN))
+			tmpF, tmpY = btfutil.btf2data(cv_btf,feature_names,augment=(learn!=knn.learnKNN))
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
 	pool = multiprocessing.Pool(multiprocessing.cpu_count())
@@ -144,9 +144,9 @@ def multiproc_hack(args):
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
 	sim_btf = predict(model,k,subseqBTF,logdir)
-	sim_features, sim_ys = btfutil.btf2data(sim_btf, feature_names, augment=(predict!=predictKNN))
+	sim_features, sim_ys = btfutil.btf2data(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
 	sim_trajectory = btfutil.split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
-	sim_traj_features = btfutil.split_btf_trajectory(sim_btf, feature_names, augment=(predict!=predictKNN))
+	sim_traj_features = btfutil.split_btf_trajectory(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
 	feats_rv = list()
 	ys_rv = list()
 	for eyed in sim_trajectory:

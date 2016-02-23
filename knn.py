@@ -1,6 +1,7 @@
 #knn.py
 import numpy, scipy.spatial, pandas
 import tarfile, shutil, os, os.path
+import subprocess
 import btfutil
 
 class KNN():
