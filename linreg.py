@@ -60,8 +60,9 @@ def predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir=None):
 	outf = open(os.path.join(logdir,"initial_placement.txt"),"w")
 	btfutil.writeInitialPlacement(outf,initialPlacementBTF)
 	outf.close()
+	# WARNING! BELOW USES OLD FishLR NOT FishReynolds!
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed', os.path.join(logdir,'initial_placement.txt'),'-nogui','-logging', logdir, '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishreynolds.FishReynolds','-placed', os.path.join(logdir,'initial_placement.txt'),'-nogui','-logging', logdir, '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
@@ -88,8 +89,9 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 	outf.close()
 	firstID = initialPlacementBTF['id'][0]
 	initialPlacementBTF.save_to_dir(exampleBTFDir)
+	# WARNING! BELOW USES OLD FishLR NOT FishReynolds
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
-	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR',\
+	proc = subprocess.Popen(['java','biosim.app.fishreynolds.FishReynolds',\
 		'-placed', os.path.join(logdir,'initial_placement.txt'),\
 		'-nogui',\
 		'-logging', logdir, \
@@ -98,6 +100,11 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 		'-ignoreTrackIDs',firstID,\
 		'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
+	#if len(errors) > 0:
+	#	print "Output:"
+	#	print output
+	#	print "Errors:"
+	#	print errors
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
 	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
@@ -108,4 +115,4 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 
 
 def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
-	return predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir)
+	return predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir)
