@@ -9,20 +9,31 @@ def generate_feature_map(n_f,D):
 	ws = numpy.random.multivariate_normal(mean=numpy.zeros(n_f),cov=numpy.eye(n_f),size=D)
 	bs = numpy.random.random(size=D)*numpy.pi*2.0
 	def feature_map(feats):
-		project = feats.dot(ws.T)
-		rotate = numpy.tile(bs,(feats.shape[0],1))
-		return numpy.sqrt(2.0/bs.shape[0])*numpy.cos(project+rotate)
+		#rv = numpy.zeros(shape=(feats.shape[0],ws.shape[0]))
+		#for row_idx in range(rv.shape[0]):
+		#	for col_idx in range(rv.shape[1]):
+		#		rv[row_idx,col_idx] = numpy.sqrt(2.0/bs.shape[0])*numpy.cos(ws[col_idx,:].dot(feats[row_idx,:])+bs[col_idx])
+		#return rv
+		rv = feats.dot(ws.T)
+		numpy.add(rv,numpy.tile(bs,(feats.shape[0],1)),out=rv)
+		numpy.cos(rv,out=rv)
+		numpy.multiply(rv,numpy.sqrt(2.0/bs.shape[0]),out=rv)
+		return rv
+		#return numpy.sqrt(2.0/bs.shape[0])*numpy.cos(project+rotate)
 	feature_map.ws = ws
 	feature_map.bs = bs
 	return feature_map
 
-def learn_RFF_linreg(features,ys,cv_features=None,cv_ys=None, D=500, feature_column_names=None):
+def learn_RFF_linreg(features,ys,cv_features=None,cv_ys=None, lamb=0.0, D=500, feature_column_names=None):
 	fm = generate_feature_map(features.shape[1],D)
 	rff = fm(features)
-	lr_weights = numpy.linalg.lstsq(rff,ys)
-	if not((cv_features is None) or (cv_ys is None)):
-		print "CV error:", numpy.linalg.norm(cv_ys - (fm(cv_features).dot(lr_weights[0])))
-	return lr_weights[0]
+	if (cv_features is None):
+		cv_features=fm(cv_features)
+	return learnLR_regularized(rff,ys,cv_features,cv_ys,lamb,feature_column_names)
+	#lr_weights = numpy.linalg.lstsq(rff,ys)
+	#if not((cv_features is None) or (cv_ys is None)):
+	#	print "CV error:", numpy.linalg.norm(cv_ys - (fm(cv_features).dot(lr_weights[0])))
+	#return lr_weights[0]
 
 def learnLR_regularized(features,ys,cv_features=None,cv_ys=None, lamb=0.0,feature_column_names=None):
 	result = numpy.linalg.lstsq(features.T.dot(features)+ lamb*numpy.identity(features.shape[1]),features.T.dot(ys))
