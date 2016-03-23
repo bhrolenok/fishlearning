@@ -36,7 +36,7 @@ def learnLR(features,ys,cv_features=None,cv_ys=None,feature_column_names=None):
 		print "CV error:",numpy.linalg.norm(cv_ys - (cv_features.dot(result[0])))
 	return result[0]
 
-def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
+def predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir=None):
 	if logdir is None:
 		logdir = os.getcwd()
 	
@@ -59,3 +59,42 @@ def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
 	rv.import_from_dir(trace_btfdir)
 	rv.filter_by_col('dbool')
 	return rv
+
+def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
+	if logdir is None:
+		logdir = os.getcwd()
+	
+	outname = os.path.join(logdir,'lr_coeff.txt')
+	exampleBTFDir = os.path.join(logdir,'exampleBTF')
+	os.mkdir(exampleBTFDir)
+	prefix = "[BTFLogger] Starting new logs in"
+	outf = open(outname,'w')
+	for row in model:
+		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
+	outf.close()
+	outf = open(os.path.join(logdir,"initial_placement.txt"),"w")
+	btfutil.writeInitialPlacement(outf,initialPlacementBTF)
+	outf.close()
+	firstID = initialPlacementBTF['id'][0]
+	initialPlacementBTF.save_to_dir(exampleBTFDir)
+	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
+	proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR',\
+		'-placed', os.path.join(logdir,'initial_placement.txt'),\
+		'-nogui',\
+		'-logging', logdir, \
+		'-lr', outname,\
+		'-replay',exampleBTFDir,\
+		'-ignoreTrackIDs',firstID,\
+		'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	output,errors = proc.communicate()
+	trace_btfdir_start = len(prefix)+output.index(prefix)
+	trace_btfdir_end = output.index("\n",trace_btfdir_start)
+	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
+	rv = btfutil.BTF()
+	rv.import_from_dir(trace_btfdir)
+	rv.filter_by_col('dbool')
+	return rv
+
+
+def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
+	return predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir)
