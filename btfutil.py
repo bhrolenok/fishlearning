@@ -195,6 +195,7 @@ def writeInitialPlacement(outf,initialPlacementBTF):
 		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
 		outf.write(" "+initialPlacementBTF['timage'][rowIdx]+"\n")
 		rowIdx += 1
+	return rowIdx
 
 def btf2data(btf,feature_names,augment):
 	features = numpy.column_stack([map(lambda line: map(float,line.split()), btf[col_name]) for col_name in feature_names])
@@ -208,3 +209,13 @@ def split_btf_trajectory(btf,feature_names,augment):
 	npid = numpy.array(map(int,btf['id']))
 	unique_ids = set(npid)
 	return {eyed:features[npid==eyed] for eyed in unique_ids}
+
+def merge_by_column(btf1,btf2,colname):
+	merged = BTF()
+	merged.column_filenames = {cname:None for cname in btf1.column_filenames.keys()}
+	combo = btf1[colname]+btf2[colname]
+	sorted_indexes = tuple(idx for idx,key in sorted(enumerate(combo),key=lambda x:x[1]))
+	for cname in merged.column_filenames.keys():
+		combo = btf1[cname]+btf2[cname]
+		merged.column_data[cname] = tuple(combo[idx] for idx in sorted_indexes)
+	return merged

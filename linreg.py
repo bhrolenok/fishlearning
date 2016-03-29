@@ -85,32 +85,40 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 		outf.write("%f %f %f\n"%(row[0],row[1],row[2]))
 	outf.close()
 	outf = open(os.path.join(logdir,"initial_placement.txt"),"w")
-	btfutil.writeInitialPlacement(outf,initialPlacementBTF)
+	numInitIds = btfutil.writeInitialPlacement(outf,initialPlacementBTF)
 	outf.close()
 	firstID = initialPlacementBTF['id'][0]
 	initialPlacementBTF.save_to_dir(exampleBTFDir)
 	# WARNING! BELOW USES OLD FishLR NOT FishReynolds
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
-	proc = subprocess.Popen(['java','biosim.app.fishreynolds.FishReynolds',\
-		'-placed', os.path.join(logdir,'initial_placement.txt'),\
-		'-nogui',\
-		'-logging', logdir, \
-		'-lr', outname,\
-		'-replay',exampleBTFDir,\
-		'-ignoreTrackIDs',firstID,\
-		'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	output,errors = proc.communicate()
-	#if len(errors) > 0:
-	#	print "Output:"
-	#	print output
-	#	print "Errors:"
-	#	print errors
-	trace_btfdir_start = len(prefix)+output.index(prefix)
-	trace_btfdir_end = output.index("\n",trace_btfdir_start)
-	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
-	rv = btfutil.BTF()
-	rv.import_from_dir(trace_btfdir)
-	rv.filter_by_col('dbool')
+	rv = None
+	for activeID in range(numInitIds):
+		proc = subprocess.Popen(['java','biosim.app.fishreynolds.FishReynolds',\
+			'-placed', os.path.join(logdir,'initial_placement.txt'),\
+			'-nogui',\
+			'-logging', logdir, \
+			'-lr', outname,\
+			'-replay',exampleBTFDir,\
+			'-ignoreTrackIDs',activeID,\
+			'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		output,errors = proc.communicate()
+		#if len(errors) > 0:
+		#	print "Output:"
+		#	print output
+		#	print "Errors:"
+		#	print errors
+		trace_btfdir_start = len(prefix)+output.index(prefix)
+		trace_btfdir_end = output.index("\n",trace_btfdir_start)
+		trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
+		if rv is None:
+			rv = btfutil.BTF()
+			rv.import_from_dir(trace_btfdir)
+			rv.filter_by_col('dbool')
+		else:
+			tmpBtf = btfutil.BTF()
+			tmpBtf.import_from_dir(trace_btfdir)
+			tmpBtf.filter_by_col('dbool')
+			rv = btfutil.merge_by_column(rv,tmpBtf,'clocktime')
 	return rv
 
 
