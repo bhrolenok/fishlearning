@@ -14,7 +14,48 @@ class KNN():
 		data_df = pandas.DataFrame(numpy.column_stack(self.kdt.data,self.ys),columns=feature_names)
 		data_df.to_csv(outf,index=False)
 
-def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
+def predictKNN_singleAgent(model, num_steps, initialPlacementBTF, logdir=None):
+	if logdir is None:
+		logdir = os.getcwd()
+	outname = os.path.join(logdir,'knn_dataset.csv')
+	exampleBTFDir = os.path.join(logdir,'exampleBTF')
+	os.mkdir(exampleBTFDir)
+	prefix = "[BTFLogger] Starting new logs in"
+	outf = open(outname,'w')
+	model.to_csv(outf,index=False)
+	outf.close()
+	placementFname = os.path.join(logdir,'initial_placement.txt')
+	outf = open(placementFname,'w')
+	btfutil.writeInitialPlacement(outf,initialPlacementBTF)
+	outf.close()
+	firstID = initialPlacementBTF['id'][0]
+	initialPlacementBTF.save_to_dir(exampleBTFDir)
+	proc = subprocess.Popen(['java',\
+							'biosim.app.fishreynolds.FishReynolds',\
+							'-placed',placementFname,\
+							'-nogui',\
+							'-logging',logdir,\
+							'-knn', outname,\
+							'-replay',exampleBTFDir,\
+							'-ignoreTrackIDs',firstID,\
+							'-for',str(num_steps)],\
+							stdout = subprocess.PIPE, stderr=subprocess.PIPE)
+	output,errors = proc.communicate()
+	trace_btfdir_start = len(prefix)+output.index(prefix)
+	trace_btfdir_end = output.index('\n',trace_btfdir_start)
+	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
+	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
+	tf.add(logdir)
+	tf.close()
+	shutil.rmtree(logdir)
+	rv = btfutil.BTF()
+	#rv.import_from_dir(trace_btfdir)
+	rv.import_from_tar(logdir+".tar.bz2")
+	rv.filter_by_col('dbool')
+	return rv
+
+
+def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 	if logdir is None:
 		logdir = os.getcwd()
 	outname = os.path.join(logdir,'knn_dataset.csv')
@@ -47,6 +88,9 @@ def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	rv.import_from_tar(logdir+".tar.bz2")
 	rv.filter_by_col('dbool')
 	return rv
+
+def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
+	return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
 
 def learnKNN(features,ys,cv_features=None,cv_ys=None, feature_column_names=None):
 	if not(cv_features is None):
