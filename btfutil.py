@@ -108,7 +108,7 @@ class BTF:
 		if self.mask is None:
 			return rv
 		else:
-			return filter(lambda d: not(d is None), map(lambda data,mask: data if mask else None, rv, self.mask))
+			return filter(lambda d: not(d is None), tuple(map(lambda data,mask: data if mask else None, rv, self.mask)))
 
 def timeseries(btf,fun,pColNames,tCol='clocktime'):
 	oldT = None
