@@ -99,7 +99,7 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 			'-logging', logdir, \
 			'-lr', outname,\
 			'-replay',exampleBTFDir,\
-			'-ignoreTrackIDs',activeID,\
+			'-ignoreTrackIDs',initialPlacementBTF['id'][activeID],\
 			'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		output,errors = proc.communicate()
 		#if len(errors) > 0:
