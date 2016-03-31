@@ -139,7 +139,7 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 	# WARNING! BELOW USES OLD FishLR NOT FishReynolds
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
 	rv = None
-	activeID = initialPlacementBTF['id'][numpy.random.randint(numInitIds)]
+	activeID = numpy.random.randint(numInitIds)
 	proc = subprocess.Popen(['java','biosim.app.fishreynolds.FishReynolds',\
 		'-placed', os.path.join(logdir,'initial_placement.txt'),\
 		'-nogui',\
