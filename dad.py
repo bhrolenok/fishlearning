@@ -5,7 +5,7 @@ import time, sys, os, os.path, tempfile, tarfile, shutil
 import cPickle
 import btfutil, linreg, knn
 
-def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'], weight_dad_samples=None,feature_column_names=None):
+def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec','pvel'], weight_dad_samples=None,feature_column_names=None):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
@@ -50,7 +50,7 @@ def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec',
 		models = models + (learn(dad_training_features,dad_training_ys,cv_features,cv_ys,feature_column_names=feature_column_names),)
 	return models
 
-def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],savetofile=False,fixed_data_ratio=False,feature_column_names=None):
+def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec','pvel'],savetofile=False,fixed_data_ratio=False,feature_column_names=None, max_threads='inf'):
 	training_features,training_ys = list(),list()
 	#randomize sample order
 	random.shuffle(training_btf_tuple)
@@ -73,7 +73,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			tmpF, tmpY = btfutil.btf2data(cv_btf,feature_names,augment=(learn!=knn.learnKNN))
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
-	pool = multiprocessing.Pool(multiprocessing.cpu_count())
+	pool = multiprocessing.Pool(min(multiprocessing.cpu_count(),max_threads))
 	num_tracklet_samples = list()
 	reserve_tuple_size = None
 	if fixed_data_ratio:
@@ -163,7 +163,7 @@ def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,fe
 		ys_rv.append(traj_ys_rv)
 	return numpy.row_stack(feats_rv), numpy.row_stack(ys_rv)
 
-def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec'],use_augment=True):
+def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec','pvel'],use_augment=True):
 	btf = btfutil.BTF()
 	btf.import_from_dir(training_dir)
 	btf.filter_by_col('dbool')
@@ -194,6 +194,7 @@ if __name__ == '__main__':
 									"oriX","oriY",\
 									"cohX","cohY",\
 									"wallX","wallY",\
+									"pvelX","pvelY","pvelT"\
 									"dvelX","dvelY","dvelT"])
 	elif len(sys.argv) == 3:
 		model_list = cPickle.load(open(sys.argv[2]))
