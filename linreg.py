@@ -89,7 +89,7 @@ def predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir=None):
 	initialPlacementBTF.save_to_dir(exampleBTFDir)
 	# WARNING! BELOW USES OLD FishLR NOT FishReynolds
 	# proc = subprocess.Popen(['java','biosim.app.fishlr.FishLR','-placed','-btf',initialPlacementBTFDir,'-nogui','-logging', '-lr', outname,'-for',str(num_steps)],stdout=subprocess.PIPE)
-	rv = None
+	rv = list()
 	for activeID in range(numInitIds):
 		proc = subprocess.Popen(['java','biosim.app.fishreynolds.FishReynolds',\
 			'-placed', os.path.join(logdir,'initial_placement.txt'),\
@@ -108,15 +108,19 @@ def predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir=None):
 		trace_btfdir_start = len(prefix)+output.index(prefix)
 		trace_btfdir_end = output.index("\n",trace_btfdir_start)
 		trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
-		if rv is None:
-			rv = btfutil.BTF()
-			rv.import_from_dir(trace_btfdir)
-			rv.filter_by_col('dbool')
-		else:
-			tmpBtf = btfutil.BTF()
-			tmpBtf.import_from_dir(trace_btfdir)
-			tmpBtf.filter_by_col('dbool')
-			rv = btfutil.merge_by_column(rv,tmpBtf,'clocktime')
+		rv_btf = btfutil.BTF()
+		rv_btf.import_from_dir(trace_btfdir)
+		rv_btf.filter_by_col('dbool')
+		rv.append(rv_btf)
+		# if rv is None:
+		# 	rv = btfutil.BTF()
+		# 	rv.import_from_dir(trace_btfdir)
+		# 	rv.filter_by_col('dbool')
+		# else:
+		# 	tmpBtf = btfutil.BTF()
+		# 	tmpBtf.import_from_dir(trace_btfdir)
+		# 	tmpBtf.filter_by_col('dbool')
+		# 	rv = btfutil.merge_by_column(rv,tmpBtf,'clocktime')
 	return rv
 
 
@@ -155,8 +159,9 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 	rv = btfutil.BTF()
 	rv.import_from_dir(trace_btfdir)
 	rv.filter_by_col('dbool')
-	return rv
+	return list(rv)
 
 
 def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
-	return predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir)
+	# return predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir)
+	return predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir)

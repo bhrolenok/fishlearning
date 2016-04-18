@@ -197,16 +197,16 @@ def writeInitialPlacement(outf,initialPlacementBTF):
 		rowIdx += 1
 	return rowIdx
 
-def btf2data(btf,feature_names,augment):
+def btf2data(btf,feature_names,augment,ys_colname='dvel'):
 	features = numpy.column_stack([map(lambda line: map(float,line.split()), btf[col_name]) for col_name in feature_names])
 	if augment:
 		features = numpy.column_stack([features,numpy.ones(features.shape[0])])
-	ys = numpy.array(map(lambda line: map(float, line.split()), btf['dvel']))
+	ys = numpy.array(map(lambda line: map(float, line.split()), btf[ys_colname]))
 	return features,ys
 
-def split_btf_trajectory(btf,feature_names,augment):
+def split_btf_trajectory(btf,feature_names,augment,id_colname='id'):
 	features,ys = btf2data(btf,feature_names,augment)
-	npid = numpy.array(map(int,btf['id']))
+	npid = numpy.array(map(int,btf[id_colname]))
 	unique_ids = set(npid)
 	return {eyed:features[npid==eyed] for eyed in unique_ids}
 

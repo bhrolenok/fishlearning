@@ -143,10 +143,20 @@ def multiproc_hack(args):
 	return do_subseq_inner_loop(args[0],args[1],args[2],args[3],args[4],args[5],args[6])
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
-	sim_btf = predict(model,k,subseqBTF,logdir)
-	sim_features, sim_ys = btfutil.btf2data(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
-	sim_trajectory = btfutil.split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
-	sim_traj_features = btfutil.split_btf_trajectory(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
+	btflist = predict(model,k,subseqBTF,logdir)
+	sim_trajectory, sim_traj_features = dict(), dict()
+	for sim_btf in btflist:
+		sim_features, sim_ys = btfutil.btf2data(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
+		tmp_traj = btfutil.split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
+		for blerp in tmp_traj.keys():
+			if blerp in sim_trajectory.keys():
+				print "ERROR! ERROR! SOMETHING HAS GONE HORRIBLY AWRY!"
+				raise RuntimeError("multiple predicted trajectories with same ID, don't know what to do, dying.")
+		sim_trajectory.update(tmp_traj)
+		tmp_traj_features =  btfutil.split_btf_trajectory(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
+		sim_traj_features.update(tmp_traj_features)
+	# sim_trajectory = btfutil.split_btf_trajectory(sim_btf,['xpos','ypos','timage'], augment=False)
+	# sim_traj_features = btfutil.split_btf_trajectory(sim_btf, feature_names, augment=(predict!=knn.predictKNN))
 	feats_rv = list()
 	ys_rv = list()
 	for eyed in sim_trajectory:

@@ -52,7 +52,7 @@ def predictKNN_singleAgent(model, num_steps, initialPlacementBTF, logdir=None):
 	#rv.import_from_dir(trace_btfdir)
 	rv.import_from_tar(logdir+".tar.bz2")
 	rv.filter_by_col('dbool')
-	return rv
+	return list(rv)
 
 
 def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
@@ -87,7 +87,7 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 	#rv.import_from_dir(trace_btfdir)
 	rv.import_from_tar(logdir+".tar.bz2")
 	rv.filter_by_col('dbool')
-	return rv
+	return list(rv)
 
 def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
 	return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
