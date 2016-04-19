@@ -141,7 +141,7 @@ def printif(s,q):
 	if q:
 		print s
 
-def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=False):
+def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=False,frameBoundaryColName='timestamp'):
 	done = False
 	rv = tuple()
 	while not(done):
@@ -161,7 +161,7 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 		while block_start_idx < max_len and (float(btf['clocktime'][block_start_idx])-seq_start_t)<subseq_length_t:
 			block_end_idx=block_start_idx
 			tmp_id_set = set()
-			while block_end_idx < max_len and float(btf['clocktime'][block_end_idx])==float(btf['clocktime'][block_start_idx]):
+			while block_end_idx < max_len and float(btf[frameBoundaryColName][block_end_idx])==float(btf[frameBoundaryColName][block_start_idx]):
 				tmp_id_set.add(btf['id'][block_end_idx])
 				block_end_idx += 1
 			if id_set is None:
@@ -187,9 +187,9 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 		depth=depth+1
 	return rv
 
-def writeInitialPlacement(outf,initialPlacementBTF):
+def writeInitialPlacement(outf,initialPlacementBTF,frameBoundaryColName='timestamp'):
 	rowIdx = 0
-	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF['clocktime'][rowIdx] == initialPlacementBTF['clocktime'][0]:
+	while rowIdx < len(initialPlacementBTF['id']) and initialPlacementBTF[frameBoundaryColName][rowIdx] == initialPlacementBTF[frameBoundaryColName][0]:
 		outf.write(initialPlacementBTF['id'][rowIdx])
 		outf.write(" "+initialPlacementBTF['xpos'][rowIdx])
 		outf.write(" "+initialPlacementBTF['ypos'][rowIdx])
