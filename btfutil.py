@@ -146,6 +146,7 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 	rv = tuple()
 	lasttime = time.time()
 	last_remaininglines = len(btf[frameBoundaryColName])
+	total_lines = last_remaininglines
 	while not(done):
 		printif("depth %d"%depth,debug)
 		head_btf = BTF()
@@ -189,7 +190,7 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 		depth=depth+1
 		curtime = time.time()
 		if curtime - lasttime > VERBOSE_TIMEOUT:
-			print "Remaining lines:",max_len,"lps:",float(last_remaininglines-max_len)/float(curtime - lasttime)
+			print "Remaining lines:",max_len,"({}%)".format(float(total_lines-max_len)/float(total_lines)),"lps:",float(last_remaininglines-max_len)/float(curtime - lasttime)
 			lasttime = curtime
 			last_remaininglines = max_len
 	return rv
