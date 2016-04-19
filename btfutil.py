@@ -144,6 +144,8 @@ def printif(s,q):
 def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=False,frameBoundaryColName='timestamp'):
 	done = False
 	rv = tuple()
+	lasttime = time.time()
+	last_remaininglines = len(btf[frameBoundaryColName])
 	while not(done):
 		printif("depth %d"%depth,debug)
 		head_btf = BTF()
@@ -153,7 +155,7 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 		seq_start_t = float(btf['clocktime'][0])
 		block_start_idx = 0
 		id_set = None
-		max_len = len(btf['clocktime'])
+		max_len = len(btf[frameBoundaryColName])
 		if ((float(btf['clocktime'][max_len-1])-seq_start_t)<subseq_length_t) and (ignore_shorter):
 			printif("Final segment too short",debug)
 			done = True
@@ -185,6 +187,11 @@ def split_subsequences(btf,subseq_length_t,ignore_shorter=True,depth=0,debug=Fal
 		rv += thing_to_add
 		btf = tail_btf
 		depth=depth+1
+		curtime = time.time()
+		if curtime - lasttime > VERBOSE_TIMEOUT:
+			print "Remaining lines:",max_len,"lps:",float(last_remaininglines-max_len)/float(curtime - lasttime)
+			lasttime = curtime
+			last_remaininglines = max_len
 	return rv
 
 def writeInitialPlacement(outf,initialPlacementBTF,frameBoundaryColName='timestamp'):
