@@ -1,6 +1,8 @@
 #parseFishAndFrames.py
-import sys, os.path
+import sys, os.path, time
 import numpy, scipy.io
+
+VERBOSE_TIMEOUT=30
 
 def main(matfile_fname,btf_outdir):
 	print "Saving BTF to dir [{}]".format(btf_outdir)
@@ -17,10 +19,12 @@ def main(matfile_fname,btf_outdir):
 	print "done."
 	num_frames = len(data['frames'])
 	print "Num frames:", num_frames
-	print "Skipping first two frames and last frame"yimage
+	print "Skipping first two frames and last frame"
 	def writeit(f,d):
 		f.write("{}\n".format(d))
-	for frame_idx = range(2,num_frames-1):
+	lasttime = time.time()
+	lastidx = 2
+	for frame_idx in range(2,num_frames-1):
 		for detection_idx in range(len(data['frames'][frame_idx]['onfish'][0][0])):
 			fishid = data['frames'][frame_idx]['onfish'][0][0][detection_idx]
 			writeit(id_btf,fishid)
@@ -34,6 +38,11 @@ def main(matfile_fname,btf_outdir):
 			writeit(timage_y_btf,timage_y)
 			timage = numpy.arctan2(timage_y,timage_x)
 			writeit(timage_btf,timage)
+		curtime = time.time()
+		if curtime-lasttime > VERBOSE_TIMEOUT:
+			print "Frame", frame_idx, "({}%)".format(100.0*float(frame_idx)/float(num_frames)),"lps", (frame_idx-lastidx)/float(VERBOSE_TIMEOUT)
+			lasttime = curtime
+			lastidx = frame_idx
 
 if __name__ == '__main__':
 	main(sys.argv[1],sys.argv[2])
