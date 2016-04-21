@@ -120,7 +120,7 @@ def predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir=None):
 		# 	tmpBtf = btfutil.BTF()
 		# 	tmpBtf.import_from_dir(trace_btfdir)
 		# 	tmpBtf.filter_by_col('dbool')
-		# 	rv = btfutil.merge_by_column(rv,tmpBtf,'clocktime')
+		# 	rv = btfutil.merge_by_column(rv,tmpBtf,'timestamp')
 	return rv
 
 

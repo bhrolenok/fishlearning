@@ -13,7 +13,7 @@ def compute(btf,outf,spf):
 	prev_block_start = 0
 	cur_block_start = None
 	for idx in range(num_lines):
-		if btf['clocktime'][idx] != btf['clocktime'][prev_block_start]:
+		if btf['timestamp'][idx] != btf['timestamp'][prev_block_start]:
 			cur_block_start = idx
 			break
 		outf.write("0.0 0.0 0.0\n")
@@ -22,7 +22,7 @@ def compute(btf,outf,spf):
 	last_checked = time.time()
 	last_line_idx = 0
 	for idx in range(cur_block_start,num_lines):
-		if btf['clocktime'][cur_block_start] != btf['clocktime'][idx]:
+		if btf['timestamp'][cur_block_start] != btf['timestamp'][idx]:
 			prev_block_start = cur_block_start
 			cur_block_start = idx
 		id_found = False

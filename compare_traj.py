@@ -112,7 +112,7 @@ def write_gp_data(btf1,btf2,outfname,framerate=None):
 	m,s = avg_diff(btf1,btf2)
 	if framerate is None:
 		nextIdx = 0
-		while btf1['clocktime'][0] == btf1['clocktime'][nextIdx]:
+		while btf1['timestamp'][0] == btf1['timestamp'][nextIdx]:
 			nextIdx += 1
 		framerate = float(btf1['clocktime'][nextIdx]) - float(btf1['clocktime'][0])
 	outf = open(outfname,'w')
