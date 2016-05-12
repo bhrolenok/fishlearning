@@ -16,49 +16,46 @@ class KNN():
 		data_df.to_csv(outf,index=False)
 
 def predictKNN_singleAgent(model, num_steps, initialPlacementBTF, logdir=None):
-	try:
-		if logdir is None:
-			logdir = os.getcwd()
-		outname = os.path.join(logdir,'knn_dataset.csv')
-		exampleBTFDir = os.path.join(logdir,'exampleBTF')
-		os.mkdir(exampleBTFDir)
-		prefix = "[BTFLogger] Starting new logs in"
-		outf = open(outname,'w')
-		model.to_csv(outf,index=False)
-		outf.close()
-		placementFname = os.path.join(logdir,'initial_placement.txt')
-		outf = open(placementFname,'w')
-		btfutil.writeInitialPlacement(outf,initialPlacementBTF)
-		outf.close()
-		firstID = initialPlacementBTF['id'][0]
-		initialPlacementBTF.save_to_dir(exampleBTFDir)
-		proc = subprocess.Popen(['java',\
-								'biosim.app.fishreynolds.FishReynolds',\
-								'-placed',placementFname,\
-								'-nogui',\
-								'-logging',logdir,\
-								'-knn', outname,\
-								'-replay',exampleBTFDir,\
-								'-ignoreTrackIDs',firstID,\
-								'-for',str(num_steps)],\
-								stdout = subprocess.PIPE, stderr=subprocess.PIPE)
-		output,errors = proc.communicate()
-		#print "output:\n",output
-		#print "errors:\n",errors
-		trace_btfdir_start = len(prefix)+output.index(prefix)
-		trace_btfdir_end = output.index('\n',trace_btfdir_start)
-		trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
-		tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
-		tf.add(logdir)
-		tf.close()
-		shutil.rmtree(logdir)
-		rv = btfutil.BTF()
-		#rv.import_from_dir(trace_btfdir)
-		rv.import_from_tar(logdir+".tar.bz2")
-		rv.filter_by_col('dbool')
-		return [rv,]
-	except:
-		raise Exception("".join(traceback.format_exception(*sys.exc_info())))
+	if logdir is None:
+		logdir = os.getcwd()
+	outname = os.path.join(logdir,'knn_dataset.csv')
+	exampleBTFDir = os.path.join(logdir,'exampleBTF')
+	os.mkdir(exampleBTFDir)
+	prefix = "[BTFLogger] Starting new logs in"
+	outf = open(outname,'w')
+	model.to_csv(outf,index=False)
+	outf.close()
+	placementFname = os.path.join(logdir,'initial_placement.txt')
+	outf = open(placementFname,'w')
+	btfutil.writeInitialPlacement(outf,initialPlacementBTF)
+	outf.close()
+	firstID = initialPlacementBTF['id'][0]
+	initialPlacementBTF.save_to_dir(exampleBTFDir)
+	proc = subprocess.Popen(['java',\
+							'biosim.app.fishreynolds.FishReynolds',\
+							'-placed',placementFname,\
+							'-nogui',\
+							'-logging',logdir,\
+							'-knn', outname,\
+							'-replay',exampleBTFDir,\
+							'-ignoreTrackIDs',firstID,\
+							'-for',str(num_steps)],\
+							stdout = subprocess.PIPE, stderr=subprocess.PIPE)
+	output,errors = proc.communicate()
+	#print "output:\n",output
+	#print "errors:\n",errors
+	trace_btfdir_start = len(prefix)+output.index(prefix)
+	trace_btfdir_end = output.index('\n',trace_btfdir_start)
+	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
+	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
+	tf.add(logdir)
+	tf.close()
+	shutil.rmtree(logdir)
+	rv = btfutil.BTF()
+	#rv.import_from_dir(trace_btfdir)
+	rv.import_from_tar(logdir+".tar.bz2")
+	rv.filter_by_col('dbool')
+	return [rv,]
 
 def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 	if logdir is None:
@@ -95,13 +92,19 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 	return list(rv)
 
 def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
-	return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
+	try:
+		return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
+	except:
+		raise Exception("".join(traceback.format_exception(*sys.exc_info())))
 
 def learnKNN(features,ys,cv_features=None,cv_ys=None, feature_column_names=None):
-	if not(cv_features is None):
-		knn_kdt = scipy.spatial.cKDTree(features) #KNN(features=features,ys=ys)
-		knn_ys = ys[knn_kdt.query(cv_features,3)[1]].mean(axis=1)
-		print "CV error:",numpy.linalg.norm(cv_ys - knn_ys)
-	combined = numpy.column_stack((features,ys),)
-	#print combined.shape, feature_column_names
-	return pandas.DataFrame(combined,columns=feature_column_names)
+	try:
+		if not(cv_features is None):
+			knn_kdt = scipy.spatial.cKDTree(features) #KNN(features=features,ys=ys)
+			knn_ys = ys[knn_kdt.query(cv_features,3)[1]].mean(axis=1)
+			print "CV error:",numpy.linalg.norm(cv_ys - knn_ys)
+		combined = numpy.column_stack((features,ys),)
+		#print combined.shape, feature_column_names
+		return pandas.DataFrame(combined,columns=feature_column_names)
+	except:
+		raise Exception("".join(traceback.format_exception(*sys.exc_info())))

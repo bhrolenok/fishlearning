@@ -164,4 +164,7 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 
 def predictLR(model,num_steps,initialPlacementBTF,logdir=None):
 	# return predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir)
-	return predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir)
+	try:
+		return predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir)
+	except:
+		raise Exception("".join(traceback.format_exception(*sys.exc_info())))
