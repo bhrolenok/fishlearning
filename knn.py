@@ -135,7 +135,8 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 	return rv
 
 def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
-	return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
+	# return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
+	return predictKNN_allAgents(model,num_steps,initialPlacementBTF,logdir)
 
 def learnKNN(features,ys,cv_features=None,cv_ys=None, feature_column_names=None):
 	if not(cv_features is None):
