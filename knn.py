@@ -92,19 +92,13 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 	return list(rv)
 
 def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
-	try:
-		return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
-	except:
-		raise Exception("".join(traceback.format_exception(*sys.exc_info())))
+	return predictKNN_singleAgent(model,num_steps,initialPlacementBTF,logdir)
 
 def learnKNN(features,ys,cv_features=None,cv_ys=None, feature_column_names=None):
-	try:
-		if not(cv_features is None):
-			knn_kdt = scipy.spatial.cKDTree(features) #KNN(features=features,ys=ys)
-			knn_ys = ys[knn_kdt.query(cv_features,3)[1]].mean(axis=1)
-			print "CV error:",numpy.linalg.norm(cv_ys - knn_ys)
-		combined = numpy.column_stack((features,ys),)
-		#print combined.shape, feature_column_names
-		return pandas.DataFrame(combined,columns=feature_column_names)
-	except:
-		raise Exception("".join(traceback.format_exception(*sys.exc_info())))
+	if not(cv_features is None):
+		knn_kdt = scipy.spatial.cKDTree(features) #KNN(features=features,ys=ys)
+		knn_ys = ys[knn_kdt.query(cv_features,3)[1]].mean(axis=1)
+		print "CV error:",numpy.linalg.norm(cv_ys - knn_ys)
+	combined = numpy.column_stack((features,ys),)
+	#print combined.shape, feature_column_names
+	return pandas.DataFrame(combined,columns=feature_column_names)

@@ -140,7 +140,10 @@ def args_generator(training_btf_tuple, training_trajectories,predict,model,k,log
 		yield (training_btf_tuple[idx],training_trajectories[idx],predict,model,k,new_logdir,feature_names)
 
 def multiproc_hack(args):
-	return do_subseq_inner_loop(args[0],args[1],args[2],args[3],args[4],args[5],args[6])
+	try:
+		return do_subseq_inner_loop(args[0],args[1],args[2],args[3],args[4],args[5],args[6])
+	except:
+		raise Exception("".join(traceback.format_exception(*sys.exc_info())))
 
 def do_subseq_inner_loop(subseqBTF,training_trajectory,predict,model,k,logdir,feature_names):
 	btflist = predict(model,k,subseqBTF,logdir)
