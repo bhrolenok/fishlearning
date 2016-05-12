@@ -4,6 +4,7 @@ import subprocess, multiprocessing
 import time, sys, os, os.path, tempfile, tarfile, shutil
 import cPickle
 import btfutil, linreg, knn
+import traceback
 
 def dad(N,k,training_dir,learn,predict,feature_names = ['rbfsepvec','rbforivec','rbfcohvec','rbfwallvec','pvel'], weight_dad_samples=None,feature_column_names=None):
 	btf = btfutil.BTF()
