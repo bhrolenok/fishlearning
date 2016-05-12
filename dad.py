@@ -188,8 +188,8 @@ def find_best_model(training_dir,model_list,feature_names=['rbfsepvec','rbforive
 def subseqmain(subseq_fname, num_models, max_seq_len,feature_column_names=None):
 	print "loading btfs from",subseq_fname
 	btf_tuple = list(cPickle.load(open(subseq_fname)))
-	models = dad_subseq(num_models,max_seq_len,btf_tuple,linreg.learnLR,linreg.predictLR, savetofile=True, fixed_data_ratio=True)
-	#models = dad_subseq(num_models,max_seq_len,btf_tuple,knn.learnKNN,knn.predictKNN, savetofile=True, fixed_data_ratio=True,feature_column_names=feature_column_names)
+	#models = dad_subseq(num_models,max_seq_len,btf_tuple,linreg.learnLR,linreg.predictLR, savetofile=True, fixed_data_ratio=True)
+	models = dad_subseq(num_models,max_seq_len,btf_tuple,knn.learnKNN,knn.predictKNN, savetofile=True, fixed_data_ratio=True,feature_column_names=feature_column_names,max_threads=4)
 
 def main(training_dir,num_models,max_seq_len,feature_column_names=None):
 	models = dad(num_models,max_seq_len,training_dir,linreg.learnLR,linreg.predictLR,feature_column_names=feature_column_names)
@@ -204,7 +204,7 @@ if __name__ == '__main__':
 									"oriX","oriY",\
 									"cohX","cohY",\
 									"wallX","wallY",\
-									"pvelX","pvelY","pvelT"\
+									"pvelX","pvelY","pvelT",\
 									"dvelX","dvelY","dvelT"])
 	elif len(sys.argv) == 3:
 		model_list = cPickle.load(open(sys.argv[2]))
