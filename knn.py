@@ -123,15 +123,14 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 		trace_btfdir_start = len(prefix)+output.index(prefix)
 		trace_btfdir_end = output.index('\n',trace_btfdir_start)
 		trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
-		tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
-		tf.add(logdir)
-		tf.close()
-		shutil.rmtree(logdir)
 		tmprv = btfutil.BTF()
-		#rv.import_from_dir(trace_btfdir)
-		tmprv.import_from_tar(logdir+".tar.bz2")
+		tmprv.import_from_dir(trace_btfdir)
 		tmprv.filter_by_col('dbool')
 		rv.append(tmprv)
+	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
+	tf.add(logdir)
+	tf.close()
+	shutil.rmtree(logdir)
 	return rv
 
 def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):
