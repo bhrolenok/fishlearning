@@ -1,6 +1,6 @@
 #knn.py
 import numpy, scipy.spatial, pandas
-import tarfile, shutil, os, os.path
+import tarfile, shutil, os, os.path, bz2
 import subprocess
 import btfutil
 import sys, traceback
@@ -127,16 +127,26 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 		trace_btfdir_start = len(prefix)+output.index(prefix)
 		trace_btfdir_end = output.index('\n',trace_btfdir_start)
 		trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()
+		tf_name = trace_btfdir+".tar.bz2"
+		tf = tarfile.open(tf_name,mode='w:bz2')
+		tf.add(trace_btfdir)
+		tf.close()
+		shutil.rmtree(trace_btfdir)
 		tmprv = btfutil.BTF()
-		tmprv.import_from_dir(trace_btfdir)
-		tmprv.filter_by_col('dbool')
-		tmprv.load_all_columns()
+		#tmprv.import_from_dir(trace_btfdir)
+		tmprv.import_from_tar(tf_name)
+		#tmprv.filter_by_col('dbool')
+		#tmprv.load_all_columns()
 		#print tmprv['id']
 		rv.append(tmprv)
-	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
-	tf.add(logdir)
-	tf.close()
-	shutil.rmtree(logdir)
+	#tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
+	bzf = bz2.BZ2File(outname+".bz2",mode='w')
+	bzf.writelines((open(outname)).readlines())
+	bzf.close()
+	os.remove(outname)
+	#tf.add(logdir)
+	#tf.close()
+	#shutil.rmtree(logdir)
 	return rv
 
 def predictKNN(model, num_steps, initialPlacementBTF,logdir=None):

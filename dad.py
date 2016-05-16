@@ -74,7 +74,7 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			tmpF, tmpY = btfutil.btf2data(cv_btf,feature_names,augment=(learn!=knn.learnKNN))
 			cv_features = numpy.row_stack([cv_features,tmpF])
 			cv_ys = numpy.row_stack([cv_ys,tmpY])
-	pool = multiprocessing.Pool(min(multiprocessing.cpu_count(),max_threads))
+	pool = multiprocessing.Pool(processes=min(multiprocessing.cpu_count(),max_threads), maxtasksperchild=1)
 	num_tracklet_samples = list()
 	reserve_tuple_size = None
 	if fixed_data_ratio:
@@ -193,7 +193,7 @@ def subseqmain(subseq_fname, num_models, max_seq_len,feature_column_names=None):
 	print "loading btfs from",subseq_fname
 	btf_tuple = list(cPickle.load(open(subseq_fname)))
 	#models = dad_subseq(num_models,max_seq_len,btf_tuple,linreg.learnLR,linreg.predictLR, savetofile=True, fixed_data_ratio=True)
-	models = dad_subseq(num_models,max_seq_len,btf_tuple,knn.learnKNN,knn.predictKNN, savetofile=True, fixed_data_ratio=True,feature_column_names=feature_column_names,max_threads=4)
+	models = dad_subseq(num_models,max_seq_len,btf_tuple,knn.learnKNN,knn.predictKNN, savetofile=True, fixed_data_ratio=True,feature_column_names=feature_column_names,max_threads=7)
 
 def main(training_dir,num_models,max_seq_len,feature_column_names=None):
 	models = dad(num_models,max_seq_len,training_dir,linreg.learnLR,linreg.predictLR,feature_column_names=feature_column_names)
