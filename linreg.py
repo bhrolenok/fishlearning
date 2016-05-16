@@ -101,7 +101,7 @@ def predictLR_allAgents(model,num_steps,initialPlacementBTF,logdir=None):
 			'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		output,errors = proc.communicate()
 		if proc.returncode != 0:
-			raise Exception("[linreg.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors)
+			raise Exception("[linreg.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors))
 		#if len(errors) > 0:
 		#	print "Output:"
 		#	print output
@@ -156,7 +156,7 @@ def predictLR_singleAgent(model,num_steps,initialPlacementBTF,logdir=None):
 		'-for',str(num_steps)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
 	if proc.returncode != 0:
-		raise Exception("[linreg.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors)
+		raise Exception("[linreg.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors))
 	trace_btfdir_start = len(prefix)+output.index(prefix)
 	trace_btfdir_end = output.index("\n",trace_btfdir_start)
 	trace_btfdir = output[trace_btfdir_start:trace_btfdir_end].strip()

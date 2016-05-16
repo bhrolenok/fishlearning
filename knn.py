@@ -43,7 +43,7 @@ def predictKNN_singleAgent(model, num_steps, initialPlacementBTF, logdir=None):
 							stdout = subprocess.PIPE, stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
 	if proc.returncode != 0:
-		raise Exception("[knn.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors)
+		raise Exception("[knn.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors))
 	#print "output:\n",output
 	#print "errors:\n",errors
 	trace_btfdir_start = len(prefix)+output.index(prefix)
@@ -121,7 +121,7 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 								stdout = subprocess.PIPE, stderr=subprocess.PIPE)
 		output,errors = proc.communicate()
 		if proc.returncode != 0:
-			raise Exception("[knn.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors)
+			raise Exception("[knn.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors))
 		#print "output:\n",output
 		#print "errors:\n",errors
 		trace_btfdir_start = len(prefix)+output.index(prefix)
