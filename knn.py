@@ -42,6 +42,8 @@ def predictKNN_singleAgent(model, num_steps, initialPlacementBTF, logdir=None):
 							'-for',str(num_steps)],\
 							stdout = subprocess.PIPE, stderr=subprocess.PIPE)
 	output,errors = proc.communicate()
+	if proc.returncode != 0:
+		raise Exception("[knn.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors)
 	#print "output:\n",output
 	#print "errors:\n",errors
 	trace_btfdir_start = len(prefix)+output.index(prefix)
@@ -118,6 +120,8 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 								'-for',str(num_steps)],\
 								stdout = subprocess.PIPE, stderr=subprocess.PIPE)
 		output,errors = proc.communicate()
+		if proc.returncode != 0:
+			raise Exception("[knn.py] Error executing simmulation:\n Output:\n{}\n Errors:\n{}".format(output,errors)
 		#print "output:\n",output
 		#print "errors:\n",errors
 		trace_btfdir_start = len(prefix)+output.index(prefix)
@@ -126,6 +130,8 @@ def predictKNN_allAgents(model, num_steps, initialPlacementBTF,logdir=None):
 		tmprv = btfutil.BTF()
 		tmprv.import_from_dir(trace_btfdir)
 		tmprv.filter_by_col('dbool')
+		tmprv.load_all_columns()
+		#print tmprv['id']
 		rv.append(tmprv)
 	tf = tarfile.open(logdir+".tar.bz2",mode='w:bz2')
 	tf.add(logdir)
