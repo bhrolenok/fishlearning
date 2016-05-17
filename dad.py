@@ -108,7 +108,9 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 	dad_training_features, dad_training_ys, num_dad_samples = list(), list(), sum(num_tracklet_samples)
 	for n in range(N):
 		print "Iteration",n
-		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,models[n],k,logdir,feature_names,n))
+		iteration_dir = os.path.join(logdir,"iteration_{}".format(n))
+		os.mkdir(iteration_dir)
+		results = pool.map(multiproc_hack,args_generator(training_btf_tuple,training_trajectories,predict,models[n],k,iteration_dir,feature_names,n))
 		new_feats, new_ys = pool.map(numpy.row_stack,zip(*results))
 		dad_training_features.append(new_feats)
 		dad_training_ys.append(new_ys)
@@ -133,6 +135,10 @@ def dad_subseq(N,k,training_btf_tuple,learn,predict,feature_names=['rbfsepvec','
 			if not(len(reserve_trajectories) > 0):
 				print "Ran out of data after iteration", n
 				break
+		tf = tarfile.open(iteration_dir+".tar.bz2",mode="w:bz2")
+		tf.add(iteration_dir)
+		tf.close()
+		shutil.rmtree(iteration_dir)
 	return models
 
 def args_generator(training_btf_tuple, training_trajectories,predict,model,k,logdir,feature_names,iteration):
