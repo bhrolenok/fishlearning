@@ -1,5 +1,6 @@
-import numpy, matplotlib.pyplot, btfutil, cPickle
+import numpy, matplotlib.pyplot, btfutil, cPickle, scipy.stats
 import pyqtgraph, pyqtgraph.opengl
+import sys
 
 # mw = pyqtgraph.Qt.QtGui.QMainWindow()
 # view = pyqtgraph.GraphicsLayoutWidget()
@@ -12,11 +13,22 @@ import pyqtgraph, pyqtgraph.opengl
 # w.resize(1800,900)
 # w.show()
 
+EPS = 0.0000001
+
+# seg_file_path = '../../fish_data/pickles/simsigma_0.15_pvel.p'
+# sim_file_path = '../../Desktop/FishLRLogger-knnsamplenorm-july-07-2016-13.26/'
+# sim_file_path = '../../Desktop/FishLRLogger-knnaverage-july-07-2016-14.04/'
+# sim_file_path = '../../Desktop/FishLRLogger-linreg-july-07-2016-14.40/'
+real_file_path = '../../fish_data/java_btf_seqs/'
+sim_file_path = '../../Desktop/FishLRLogger-momentum-july-12/'
+if len(sys.argv) > 1 and len(sys.argv) < 4:
+	sim_file_path = sys.argv[1]
+	if len(sys.argv) == 3:
+		real_file_path = sys.argv[2]
 print "Loading segments"
-seg_file_path = '../../fish_data/pickles/simsigma_0.15_pvel.p'
-res = cPickle.load(open(seg_file_path))
+# res = cPickle.load(open(seg_file_path))
+res = btfutil.load_sequence_dir(real_file_path)
 sim_res = btfutil.BTF()
-sim_file_path = '../../Desktop/FishLRLogger-knn-it0/'
 sim_res.import_from_dir(sim_file_path)
 print "Stacking data"
 fnames = ['rbfsepvec', 'rbforivec','rbfcohvec', 'rbfwallvec','pvel']
@@ -26,15 +38,18 @@ all_outs = numpy.row_stack([thing[1] for thing in feats_and_outs])
 # all_data_centered = all_data - all_data.mean(axis=0)
 # all_data_normalized = all_data_centered/all_data_centered.std(axis=0)
 sim_outs = btfutil.btf2data(sim_res,fnames,False)[1]
+all_outs = all_outs[:len(sim_outs)]
 # all_outs = numpy.random.rand(100,11)
 
 print "Creating histograms"
-xvel_y, xvel_x = numpy.histogram(all_outs[:,0],bins=150)
-yvel_y, yvel_x = numpy.histogram(all_outs[:,1],bins=150)
-tvel_y, tvel_x = numpy.histogram(all_outs[:,2],bins=150)
-sim_xvel_y, sim_xvel_x = numpy.histogram(sim_outs[:,0],bins=150)
-sim_yvel_y, sim_yvel_x = numpy.histogram(sim_outs[:,1],bins=150)
-sim_tvel_y, sim_tvel_x = numpy.histogram(sim_outs[:,2],bins=150)
+xvel_y, xvel_x = numpy.histogram(all_outs[:,0],bins=150,range=(-0.5,0.5),density=True)
+yvel_y, yvel_x = numpy.histogram(all_outs[:,1],bins=150,range=(-0.5,0.5),density=True)
+tvel_y, tvel_x = numpy.histogram(all_outs[:,2],bins=150,range=(-0.5,0.5),density=True)
+sim_xvel_y, sim_xvel_x = numpy.histogram(sim_outs[:,0],bins=150,range=(-0.5,0.5),density=True)
+sim_yvel_y, sim_yvel_x = numpy.histogram(sim_outs[:,1],bins=150,range=(-0.5,0.5),density=True)
+sim_tvel_y, sim_tvel_x = numpy.histogram(sim_outs[:,2],bins=150,range=(-0.5,0.5),density=True)
+cstest_res = scipy.stats.chisquare(xvel_y,sim_xvel_y+EPS)
+print "Chi-square test results for x-velocity:", cstest_res
 
 print "Plotting"
 app = pyqtgraph.Qt.QtGui.QApplication([])
@@ -73,6 +88,7 @@ plt_c.plot(sim_xvel_x, sim_xvel_y,stepMode=True,fillLevel=0,brush=(0,255,0,150))
 plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean,pen={'style':1,'color':(0,255,0,150)}))
 plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean+sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
 plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean-sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
+plt_c.addItem(pyqtgraph.TextItem("pval: {}, stat: {}".format(cstest_res[1],cstest_res[0])))
 
 pyqtgraph.Qt.QtGui.QApplication.instance().exec_()
 print "Done"
