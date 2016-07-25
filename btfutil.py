@@ -22,11 +22,16 @@ def verbose_readlines(infile):
 		curidx += 1
 
 class BTF:
-	def __init__(self):
+	def __init__(self,src_path=None):
 		self.column_filenames = dict()
 		self.column_data = dict()
 		self.mask = None
 		self.tfile = None
+		if not(src_path is None):
+			if os.path.isdir(src_path):
+				self.import_from_dir(src_path)
+			else:
+				self.import_from_tar(src_path)
 
 	def import_from_dir(self,dirname):
 		self.mask = None
@@ -227,3 +232,6 @@ def merge_by_column(btf1,btf2,colname):
 		combo = btf1[cname]+btf2[cname]
 		merged.column_data[cname] = tuple(combo[idx] for idx in sorted_indexes)
 	return merged
+
+def load_sequence_dir(seqdir):
+	return [BTF(os.path.join(seqdir,name)) for name in os.listdir(seqdir) if os.path.isdir(os.path.join(seqdir,name))]
