@@ -31,7 +31,8 @@ res = btfutil.load_sequence_dir(real_file_path)
 sim_res = btfutil.BTF()
 sim_res.import_from_dir(sim_file_path)
 print "Stacking data"
-fnames = ['rbfsepvec', 'rbforivec','rbfcohvec', 'rbfwallvec','pvel']
+# fnames = ['rbfsepvec', 'rbforivec','rbfcohvec', 'rbfwallvec','pvel']
+fnames = ['id']
 feats_and_outs = map(lambda r: btfutil.btf2data(r,fnames,False),res)
 # all_data = numpy.row_stack([thing[0] for thing in feats_and_outs])
 all_outs = numpy.row_stack([thing[1] for thing in feats_and_outs])
