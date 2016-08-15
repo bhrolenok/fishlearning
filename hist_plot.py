@@ -1,7 +1,10 @@
-import numpy, matplotlib.pyplot, btfutil, cPickle, scipy.stats
+import numpy, btfutil, cPickle, scipy.stats
 import pyqtgraph, pyqtgraph.opengl
+# import matplotlib.pyplot
 import sys
 
+pyqtgraph.setConfigOption('background','w')
+pyqtgraph.setConfigOption('foreground','k')
 # mw = pyqtgraph.Qt.QtGui.QMainWindow()
 # view = pyqtgraph.GraphicsLayoutWidget()
 # mw.setCentralWidget(view)
@@ -64,7 +67,7 @@ print "xvel mean +- std:", xvel_mean,"+-",xvel_std
 plt1.addItem(pyqtgraph.InfiniteLine(xvel_mean,pen={'style':1,'color':(255,255,255,150)}))
 plt1.addItem(pyqtgraph.InfiniteLine(xvel_mean+xvel_std,pen={'style':3,'color':(255,255,255,150)}))
 plt1.addItem(pyqtgraph.InfiniteLine(xvel_mean-xvel_std,pen={'style':3,'color':(255,255,255,150)}))
-plt1.addItem(pyqtgraph.TextItem("{} +- {}".format(xvel_mean,xvel_std)))
+plt1.addItem(pyqtgraph.TextItem("{} +- {}".format(xvel_mean,xvel_std),color=(0,0,0)))
 
 #sim xVel
 w_sim = pyqtgraph.GraphicsWindow(title="Sim xVel")
@@ -76,7 +79,7 @@ print "sim xvel mean +- std:", sim_xvel_mean,"+-",sim_xvel_std
 plt_sim.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean,pen={'style':1,'color':(0,255,0,150)}))
 plt_sim.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean+sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
 plt_sim.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean-sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
-plt_sim.addItem(pyqtgraph.TextItem("{} +- {}".format(sim_xvel_mean,sim_xvel_std)))
+plt_sim.addItem(pyqtgraph.TextItem("{} +- {}".format(sim_xvel_mean,sim_xvel_std),color=(0,0,0)))
 
 #combo xVel
 w_combo = pyqtgraph.GraphicsWindow(title="Combined xVel")
@@ -89,7 +92,7 @@ plt_c.plot(sim_xvel_x, sim_xvel_y,stepMode=True,fillLevel=0,brush=(0,255,0,150))
 plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean,pen={'style':1,'color':(0,255,0,150)}))
 plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean+sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
 plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean-sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
-plt_c.addItem(pyqtgraph.TextItem("pval: {}, stat: {}".format(cstest_res[1],cstest_res[0])))
+plt_c.addItem(pyqtgraph.TextItem("pval: {}, stat: {}".format(cstest_res[1],cstest_res[0]),color=(0,0,0)))
 
 pyqtgraph.Qt.QtGui.QApplication.instance().exec_()
 print "Done"
