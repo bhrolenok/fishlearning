@@ -42,6 +42,12 @@ all_outs = numpy.row_stack([thing[1] for thing in feats_and_outs])
 # all_data_centered = all_data - all_data.mean(axis=0)
 # all_data_normalized = all_data_centered/all_data_centered.std(axis=0)
 sim_outs = btfutil.btf2data(sim_res,fnames,False)[1]
+#pick a random 10% of the data, see how well we match
+# numpy.random.shuffle(sim_outs)
+# numpy.random.shuffle(all_outs)
+# all_outs=all_outs[:len(all_outs)/10]
+# sim_outs = sim_outs[:len(all_outs)]
+# print "Samples: ", all_outs.shape,sim_outs.shape
 all_outs = all_outs[:len(sim_outs)]
 # all_outs = numpy.random.rand(100,11)
 
@@ -52,8 +58,10 @@ tvel_y, tvel_x = numpy.histogram(all_outs[:,2],bins=150,range=(-0.5,0.5),density
 sim_xvel_y, sim_xvel_x = numpy.histogram(sim_outs[:,0],bins=150,range=(-0.5,0.5),density=True)
 sim_yvel_y, sim_yvel_x = numpy.histogram(sim_outs[:,1],bins=150,range=(-0.5,0.5),density=True)
 sim_tvel_y, sim_tvel_x = numpy.histogram(sim_outs[:,2],bins=150,range=(-0.5,0.5),density=True)
-cstest_res = scipy.stats.chisquare(xvel_y,sim_xvel_y+EPS)
-print "Chi-square test results for x-velocity:", cstest_res
+# cstest_res = scipy.stats.chisquare(xvel_y,sim_xvel_y+EPS)
+# print "Chi-square test results for x-velocity:", cstest_res[0],cstest_res[1]
+kldiv = scipy.stats.entropy(xvel_y,sim_xvel_y+EPS)
+print "KL divergence for x-velocity:", kldiv
 
 print "Plotting"
 app = pyqtgraph.Qt.QtGui.QApplication([])
@@ -85,14 +93,14 @@ plt_sim.addItem(pyqtgraph.TextItem("{} +- {}".format(sim_xvel_mean,sim_xvel_std)
 w_combo = pyqtgraph.GraphicsWindow(title="Combined xVel")
 plt_c = w_combo.addPlot()
 plt_c.plot(xvel_x, xvel_y, stepMode=True, fillLevel=0, brush=(0,0,255,150))
-plt_c.addItem(pyqtgraph.InfiniteLine(xvel_mean,pen={'style':1,'color':(255,255,255,150)}))
-plt_c.addItem(pyqtgraph.InfiniteLine(xvel_mean+xvel_std,pen={'style':3,'color':(255,255,255,150)}))
-plt_c.addItem(pyqtgraph.InfiniteLine(xvel_mean-xvel_std,pen={'style':3,'color':(255,255,255,150)}))
-plt_c.plot(sim_xvel_x, sim_xvel_y,stepMode=True,fillLevel=0,brush=(0,255,0,150))
-plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean,pen={'style':1,'color':(0,255,0,150)}))
-plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean+sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
-plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean-sim_xvel_std,pen={'style':3,'color':(0,255,0,150)}))
-plt_c.addItem(pyqtgraph.TextItem("pval: {}, stat: {}".format(cstest_res[1],cstest_res[0]),color=(0,0,0)))
+plt_c.addItem(pyqtgraph.InfiniteLine(xvel_mean,pen={'style':1,'color':(50,50,50,200)}))
+plt_c.addItem(pyqtgraph.InfiniteLine(xvel_mean+xvel_std,pen={'style':3,'color':(50,50,50,200)}))
+plt_c.addItem(pyqtgraph.InfiniteLine(xvel_mean-xvel_std,pen={'style':3,'color':(50,50,50,200)}))
+plt_c.plot(sim_xvel_x, sim_xvel_y,stepMode=True,fillLevel=0,brush=(0,150,0,200))
+plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean,pen={'style':1,'color':(0,150,0,200)}))
+plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean+sim_xvel_std,pen={'style':3,'color':(0,150,0,200)}))
+plt_c.addItem(pyqtgraph.InfiniteLine(sim_xvel_mean-sim_xvel_std,pen={'style':3,'color':(0,150,0,200)}))
+plt_c.addItem(pyqtgraph.TextItem("KL divergence: {}".format(kldiv),color=(0,0,0)))
 
 pyqtgraph.Qt.QtGui.QApplication.instance().exec_()
 print "Done"
