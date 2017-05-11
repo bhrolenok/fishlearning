@@ -97,9 +97,10 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
 with tf.Session() as sess:
 	sess.run(tf.global_variables_initializer())
+	loss_list = []
 	try:
 		last_time = time.time()
-		for i in range(20000):
+		for i in range(10000):
 			# bperm = numpy.random.permutation(len(data[0]))
 			# fx = data[0][bperm][:100]
 			# fy_ = data[1][bperm][:100]
@@ -108,6 +109,7 @@ with tf.Session() as sess:
 			# fy_ = data[bperm+1][:batch_size]
 			if i%10==0:
 				train_loss = loss.eval(feed_dict={x:fx})
+				loss_list.append(train_loss)
 				new_time = time.time()
 				print "step {}, training loss {}".format(i,train_loss), "{} steps per second".format(10.0/float(new_time-last_time))
 				last_time = new_time
@@ -115,6 +117,14 @@ with tf.Session() as sess:
 		# print sess.run([Win,Bin,Wout,Bout])
 	except KeyboardInterrupt as kbi:
 		print "Ctrl-c detected, stopping training (press again to quit)"
+	if len(loss_list)>0:
+		matplotlib.pyplot.plot(loss_list)
+		try:
+			matplotlib.pyplot.show()
+		except:
+			print "Could not display error curve"
+		print "Saving error curve to 'training_error_curve.png'"
+		matplotlib.pyplot.savefig('training_error_curve.png')
 	# test_vis_data = numpy.column_stack(sess.run(test_outputs,feed_dict={x:data[numpy.random.permutation(len(data))][:5]}))
 	# matplotlib.pyplot.plot(test_vis_data.T)
 	# matplotlib.pyplot.show()
