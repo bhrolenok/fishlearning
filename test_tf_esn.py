@@ -5,6 +5,8 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot
 
+import time
+
 inSize = 1
 outSize = 1
 reservoirSize = 1000
@@ -96,6 +98,7 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 with tf.Session() as sess:
 	sess.run(tf.global_variables_initializer())
 	try:
+		last_time = time.time()
 		for i in range(20000):
 			# bperm = numpy.random.permutation(len(data[0]))
 			# fx = data[0][bperm][:100]
@@ -105,7 +108,9 @@ with tf.Session() as sess:
 			# fy_ = data[bperm+1][:batch_size]
 			if i%10==0:
 				train_loss = loss.eval(feed_dict={x:fx})
-				print "step {}, training loss {}".format(i,train_loss)
+				new_time = time.time()
+				print "step {}, training loss {}".format(i,train_loss), "{} steps per second".format(10.0/float(new_time-last_time))
+				last_time = new_time
 			train_step.run(feed_dict={x:fx})
 		# print sess.run([Win,Bin,Wout,Bout])
 	except KeyboardInterrupt as kbi:
